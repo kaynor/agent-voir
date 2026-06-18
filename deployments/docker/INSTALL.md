@@ -1,10 +1,12 @@
 # AgentVoir onebox — Docker install guide
 
-This guide is for **end users** who want to run AgentVoir locally with Docker. You do not need Go, Node.js, or a local database — only Docker.
+This guide is for **end users** who want to run AgentVoir locally. You need **Docker only** — no Go, Node.js, Make, or local builds.
+
+Pre-built AgentVoir images are published to [GitHub Container Registry (GHCR)](https://github.com/kaynor/agent-voir/pkgs/container/agent-voir%2Fgateway) when maintainers create a GitHub Release. Docker pulls those images; nothing is compiled on your machine.
 
 ## What you get
 
-**Onebox** is a self-contained AgentVoir stack: one command starts everything you need to try the product.
+**Onebox** is a self-contained AgentVoir stack: a few Docker commands start everything you need to try the product.
 
 | Exposed on your machine | URL (defaults) |
 | ----------------------- | -------------- |
@@ -14,20 +16,16 @@ This guide is for **end users** who want to run AgentVoir locally with Docker. Y
 
 Postgres, Redis, ClickHouse, and OPA run **inside Docker only**. They do not bind to `:5432`, `:6379`, or `:8123` on your host, so onebox will not conflict with databases you already run.
 
-`docker ps` will show **7 containers** (all named `agentvoir-onebox-*`). That is expected — you interact with AgentVoir through the three URLs above, not by managing each container yourself.
+`docker ps` will show **7 containers** (all named `agentvoir-onebox-*`). That is expected — you interact with AgentVoir through the three URLs above.
 
 ---
 
 ## Prerequisites
 
-Install these on your machine before starting:
-
 1. **Docker Engine** with **Docker Compose v2** (`docker compose`, not legacy `docker-compose`)
    - [Docker Desktop](https://docs.docker.com/get-docker/) (macOS, Windows, Linux)
    - Or Docker Engine + Compose plugin on Linux
-2. **Git** — to clone the repository
-3. **Make** (optional) — shortcuts like `make onebox-up`; plain `docker compose` works without it
-4. **curl** (optional) — for smoke tests below
+2. **curl** (optional) — for smoke tests below
 
 Verify Docker is running:
 
@@ -40,71 +38,95 @@ docker compose version
 
 ## Install and start
 
-### 1. Clone the repository
+### Option A — GitHub Release zip (no Git required)
+
+1. Open [GitHub Releases](https://github.com/kaynor/agent-voir/releases) and download the **Source code (zip)** for the version you want (e.g. `v1.0.0`).
+
+2. Unzip and enter the folder:
 
 ```bash
-git clone https://github.com/your-org/agentvoir.git
-cd agentvoir
+unzip agent-voir-1.0.0.zip
+cd agent-voir-1.0.0
 ```
 
-Replace the clone URL with your fork or internal mirror if applicable.
-
-### 2. (Optional) Configure ports and API key
-
-On first start, a config file is created automatically from the example. To customize **before** starting:
+3. Create config (optional — defaults work for a first try):
 
 ```bash
 cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 ```
 
+4. Pull images and start:
+
+```bash
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml pull
+
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml up -d
+```
+
+**Or use the helper script** (same steps, no typing compose flags):
+
+```bash
+chmod +x scripts/onebox.sh
+./scripts/onebox.sh
+```
+
+### Option B — Git clone
+
+```bash
+git clone https://github.com/kaynor/agent-voir.git
+cd agent-voir
+cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
+./scripts/onebox.sh
+```
+
+### Pin a specific release
+
+Edit `deployments/docker/.env.onebox` before starting:
+
+```bash
+AGENTVOIR_IMAGE_REGISTRY=ghcr.io/kaynor/agent-voir
+AGENTVOIR_VERSION=v1.0.0
+```
+
+Use the same `docker compose pull` and `up -d` commands above.
+
+---
+
+## Configure (optional)
+
 Edit `deployments/docker/.env.onebox`:
 
 ```bash
+# Image version (match a GitHub Release tag, or use latest)
+AGENTVOIR_IMAGE_REGISTRY=ghcr.io/kaynor/agent-voir
+AGENTVOIR_VERSION=latest
+
 # Change these if 8080/8081/8082 are already in use
 AGENTVOIR_GATEWAY_PORT=8080
 AGENTVOIR_REGISTRY_PORT=8081
 AGENTVOIR_USAGE_PORT=8082
 
-# API key for gateway clients (default is fine for local try-outs)
+# Gateway auth key for OpenAI-compatible clients
 GATEWAY_API_KEY=agentvoir-onebox-key
 
-# Optional: real OpenAI key if you want live model responses
+# Optional: real OpenAI key for live model responses
 # (mock provider works without this)
 OPENAI_API_KEY=
 ```
 
-### 3. Start onebox
-
-**With Make (recommended):**
-
-```bash
-make onebox-up
-```
-
-**Without Make:**
-
-```bash
-cp -n deployments/docker/.env.onebox.example deployments/docker/.env.onebox
-docker compose --env-file deployments/docker/.env.onebox \
-  -f deployments/docker/docker-compose.onebox.yml up -d --build
-```
-
-**Or use the helper script:**
-
-```bash
-./scripts/onebox.sh
-```
-
-The first run builds app images and may take several minutes. Later starts are much faster.
+After changing ports or version, run `docker compose ... pull` again if you changed `AGENTVOIR_VERSION`.
 
 ---
 
 ## Verify it works
 
-Wait until services are healthy (usually 30–60 seconds on first boot), then run:
+Wait 30–60 seconds for services to become healthy, then:
 
 ```bash
-make onebox-smoke
+chmod +x scripts/onebox-smoke.sh
+./scripts/onebox-smoke.sh
 ```
 
 Or check manually:
@@ -125,14 +147,10 @@ All should succeed without connection errors.
 
 ### OpenAI-compatible clients
 
-Point any OpenAI SDK or tool at the local gateway:
-
 ```bash
 export OPENAI_BASE_URL="http://localhost:8080/v1"
 export OPENAI_API_KEY="agentvoir-onebox-key"
 ```
-
-If you changed ports or the API key in `.env.onebox`, use those values instead.
 
 ### Example chat completion
 
@@ -147,43 +165,43 @@ curl http://localhost:8080/v1/chat/completions \
   }'
 ```
 
-### Python SDK
-
-```bash
-pip install -e packages/sdk-python
-python -c "
-from agentvoir import GatewayClient
-g = GatewayClient(base_url='http://localhost:8080', api_key='agentvoir-onebox-key')
-print(g.list_models())
-"
-```
-
-See [packages/sdk-python/README.md](../../packages/sdk-python/README.md) for full SDK docs.
-
 ---
 
-## Day-to-day commands
+## Day-to-day commands (Docker only)
+
+Set these once per shell session for shorter commands:
+
+```bash
+export ONEBOX="docker compose --env-file deployments/docker/.env.onebox -f deployments/docker/docker-compose.onebox.yml"
+```
 
 | Action | Command |
 | ------ | ------- |
-| Start | `make onebox-up` |
-| Stop (keep data) | `make onebox-down` |
-| Follow logs | `make onebox-logs` |
-| Stop and wipe all onebox data | `make onebox-reset` |
-| Health checks | `make onebox-smoke` |
-
-Without Make, replace `make onebox-*` with:
-
-```bash
-docker compose --env-file deployments/docker/.env.onebox \
-  -f deployments/docker/docker-compose.onebox.yml <up|down|logs|...>
-```
-
-Add `-v` to `down` to remove volumes (same as `onebox-reset`).
+| Start | `$ONEBOX pull && $ONEBOX up -d` |
+| Stop (keep data) | `$ONEBOX down` |
+| Follow logs | `$ONEBOX logs -f` |
+| Stop and wipe data | `$ONEBOX down -v` |
+| Health checks | `./scripts/onebox-smoke.sh` |
 
 ---
 
 ## Troubleshooting
+
+### Image pull fails / not found
+
+Pre-built images are published when a maintainer creates a **GitHub Release**. If pull fails:
+
+1. Confirm a release exists at [GitHub Releases](https://github.com/kaynor/agent-voir/releases).
+2. Set `AGENTVOIR_VERSION` in `.env.onebox` to that release tag (e.g. `v1.0.0`).
+3. Ensure GHCR packages are **public** (maintainer setting under GitHub → Packages).
+
+**Contributors** building from source without published images:
+
+```bash
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml \
+  -f deployments/docker/docker-compose.onebox.build.yml up -d --build
+```
 
 ### Docker daemon not running
 
@@ -191,19 +209,11 @@ Add `-v` to `down` to remove volumes (same as `onebox-reset`).
 Cannot connect to the Docker daemon
 ```
 
-Start Docker Desktop, or on Linux:
-
-```bash
-sudo systemctl start docker
-```
+Start Docker Desktop, or on Linux: `sudo systemctl start docker`
 
 ### Port already in use
 
-```text
-Bind for 0.0.0.0:8080 failed: port is already allocated
-```
-
-Edit `deployments/docker/.env.onebox` and pick free ports, for example:
+Edit `deployments/docker/.env.onebox`:
 
 ```bash
 AGENTVOIR_GATEWAY_PORT=18080
@@ -211,73 +221,70 @@ AGENTVOIR_REGISTRY_PORT=18081
 AGENTVOIR_USAGE_PORT=18082
 ```
 
-Then run `make onebox-up` again and use the new URLs.
+Then `$ONEBOX up -d` again.
 
 ### Services not ready yet
 
-After `make onebox-up`, infra containers need time to pass health checks before apps start. If smoke tests fail, wait a minute and retry, or check logs:
+Wait a minute and retry `./scripts/onebox-smoke.sh`, or inspect logs:
 
 ```bash
-make onebox-logs
-```
-
-### Build fails pulling Go modules (DNS / network)
-
-Inside Docker builds, module downloads can fail on restricted networks. Ensure the host can reach the internet, or configure Docker DNS (see project maintainer docs). Retry:
-
-```bash
-make onebox-down
-make onebox-up
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml logs -f
 ```
 
 ### Wrong stack running
 
-If you previously ran the **developer** stack (`make dev-up-all`), stop it before starting onebox:
+Stop the developer stack if you ran it earlier:
 
 ```bash
-make dev-down
-make onebox-up
+docker compose -f deployments/docker/docker-compose.yml --profile apps down
 ```
 
-Onebox containers are named `agentvoir-onebox-*`. Developer stack containers are typically named `docker-*`.
-
-### Start fresh
-
-To reset all onebox data (Postgres, Redis, ClickHouse volumes):
-
-```bash
-make onebox-reset
-make onebox-up
-```
+Onebox containers are named `agentvoir-onebox-*`.
 
 ---
 
-## Onebox vs developer Docker stack
+## Onebox vs developer stack
 
 | | Onebox (this guide) | Developer stack |
 | -- | ------------------- | ----------------- |
-| Command | `make onebox-up` | `make dev-up-all` |
-| Best for | Trying AgentVoir, demos, SDK tests | Building AgentVoir locally |
-| Postgres/Redis on host ports | No | Yes |
+| Start | `docker compose pull && up -d` | `make dev-up-all` (builds locally) |
+| Best for | Trying AgentVoir, demos | Hacking on Go/Node source |
+| Requires Make | No | Optional |
+| Compiles on your machine | No | Yes |
 | Grafana / Prometheus | No | Yes |
-| Requires Go / Node on host | No | Yes (for local app dev) |
-
-For contributors hacking on Go services or the web console, see the main [README.md](../../README.md) developer setup section.
 
 ---
 
 ## Uninstall
 
-Stop the stack and remove volumes:
-
 ```bash
-make onebox-reset
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml down -v
 ```
 
-Remove cloned source and built images if you no longer need them:
+Optional — remove downloaded images:
 
 ```bash
-cd ..
-rm -rf agentvoir
-docker image prune -a   # optional: reclaim disk from built images
+docker image rm ghcr.io/kaynor/agent-voir/gateway:latest \
+  ghcr.io/kaynor/agent-voir/registry-api:latest \
+  ghcr.io/kaynor/agent-voir/token-accounting:latest
+```
+
+---
+
+## For maintainers: publish images
+
+Creating a GitHub Release (e.g. tag `v1.0.0`) triggers [.github/workflows/release-images.yml](../../.github/workflows/release-images.yml), which builds and pushes:
+
+- `ghcr.io/kaynor/agent-voir/gateway`
+- `ghcr.io/kaynor/agent-voir/registry-api`
+- `ghcr.io/kaynor/agent-voir/token-accounting`
+
+After the first publish, set each package to **Public** under GitHub → Packages so anonymous `docker pull` works for end users.
+
+Manual publish (any tag):
+
+```bash
+# GitHub → Actions → Release container images → Run workflow
 ```

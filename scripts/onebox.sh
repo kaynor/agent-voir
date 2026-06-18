@@ -17,8 +17,11 @@ REGISTRY_PORT="${AGENTVOIR_REGISTRY_PORT:-8081}"
 USAGE_PORT="${AGENTVOIR_USAGE_PORT:-8082}"
 API_KEY="${GATEWAY_API_KEY:-agentvoir-onebox-key}"
 
-echo "Starting AgentVoir onebox (isolated all-in-one stack)..."
-docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
+echo "Pulling AgentVoir onebox images..."
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull
+
+echo "Starting AgentVoir onebox..."
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d
 
 echo ""
 echo "AgentVoir onebox is starting. Only these ports are exposed on your machine:"
@@ -29,13 +32,11 @@ echo ""
 echo "Postgres, Redis, ClickHouse, and OPA run inside Docker only — no host port conflicts."
 echo ""
 echo "Smoke test:"
-echo "  curl http://localhost:${REGISTRY_PORT}/healthz"
-echo "  curl http://localhost:${GATEWAY_PORT}/v1/models -H 'Authorization: Bearer ${API_KEY}'"
+echo "  ./scripts/onebox-smoke.sh"
 echo ""
 echo "OpenAI-compatible client:"
 echo "  export OPENAI_BASE_URL=http://localhost:${GATEWAY_PORT}/v1"
 echo "  export OPENAI_API_KEY=${API_KEY}"
 echo ""
-echo "Stop:  make onebox-down"
-echo "Logs:  make onebox-logs"
-echo "Reset: make onebox-reset"
+echo "Stop:  docker compose --env-file $ENV_FILE -f $COMPOSE_FILE down"
+echo "Logs:  docker compose --env-file $ENV_FILE -f $COMPOSE_FILE logs -f"

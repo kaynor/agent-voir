@@ -1,6 +1,11 @@
+License
+Stars
+Issues
+Last Commit
+
 # AgentVoir
 
-**AgentVoir** is an open-source control plane and low-latency LLM gateway for enterprise AI agents.
+**AgentVoir** is an open-source enterprise **AI agent registry**, **low latency LLM gateway**, **model proxy**, **semantic cache**, and **governance control plane** for **agentic AI systems**.
 
 ---
 
@@ -8,15 +13,13 @@
 
 ---
 
-**[Kailash Aynor] This project uses Agent Bots to design and code features for this project.
-
-
+**[Kailash Aynor] This project uses Agent Bots to design and code features for this project. See below Architecture for AI-assisted development flow.
 
 It helps enterprises **register agents**, **govern model/tool access**, **track token usage and cost**, **map dependencies**, **enforce policy-as-code**, and **cache repeated LLM requests** through an OpenAI-compatible proxy.
 
 > Status: early scaffold. This repository is structured for an enterprise-grade implementation, but many modules are intentionally placeholders until the first implementation milestone lands.
 
-![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
+AgentVoir tech architecture
 
 ---
 
@@ -159,26 +162,38 @@ agentvoir/
 - Go 1.25+
 - Node.js 20+ (only for the web console)
 - Docker and Docker Compose
-- Make (optional but recommended)
+- Make (optional — contributors only; end users do not need it)
 
 ### Quick try (recommended for end users)
 
 See **[deployments/docker/INSTALL.md](deployments/docker/INSTALL.md)** for the full Docker install guide.
 
-The **onebox** stack is a self-contained all-in-one deployment: one command starts AgentVoir with its own Postgres, Redis, ClickHouse, and OPA on an **internal Docker network**. Nothing binds to `:5432`, `:6379`, or `:8123` on your host, so it won't conflict with other apps or database containers you already run.
+The **onebox** stack uses **pre-built Docker images** — no Make, no Go, and no local compile. Download a [GitHub Release](https://github.com/kaynor/agent-voir/releases) zip (or clone the repo), then:
 
 ```bash
-make onebox-up
-make onebox-smoke
+cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
+./scripts/onebox.sh
+./scripts/onebox-smoke.sh
+```
+
+Or with plain Docker Compose:
+
+```bash
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml pull
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml up -d
 ```
 
 Default exposed ports (change in `deployments/docker/.env.onebox` if needed):
 
-| Service | URL | Notes |
-| ------- | --- | ----- |
-| Gateway | http://localhost:8080 | OpenAI-compatible API |
-| Registry API | http://localhost:8081 | Agent registry |
-| Token accounting | http://localhost:8082 | Usage events |
+
+| Service          | URL                                            | Notes                 |
+| ---------------- | ---------------------------------------------- | --------------------- |
+| Gateway          | [http://localhost:8080](http://localhost:8080) | OpenAI-compatible API |
+| Registry API     | [http://localhost:8081](http://localhost:8081) | Agent registry        |
+| Token accounting | [http://localhost:8082](http://localhost:8082) | Usage events          |
+
 
 Default gateway API key: `agentvoir-onebox-key`
 
@@ -203,18 +218,14 @@ curl http://localhost:8080/v1/chat/completions \
 Useful onebox commands:
 
 ```bash
-make onebox-logs     # follow logs
-make onebox-down     # stop (keeps data volumes)
-make onebox-reset    # stop and wipe onebox data
+./scripts/onebox-smoke.sh   # health checks
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml logs -f
+docker compose --env-file deployments/docker/.env.onebox \
+  -f deployments/docker/docker-compose.onebox.yml down
 ```
 
-Or use the bootstrap script:
-
-```bash
-./scripts/onebox.sh
-```
-
-**Onebox vs developer setup:** use `make onebox-up` to try AgentVoir in isolation. Use `make dev-up` / `make dev-up-all` when you want infra ports exposed on localhost for local Go/Node development. See [deployments/docker/README.md](deployments/docker/README.md).
+**Onebox vs developer setup:** use `./scripts/onebox.sh` to try AgentVoir with pre-built images. Use `make dev-up` / `make dev-up-all` when building from source locally. See [deployments/docker/README.md](deployments/docker/README.md).
 
 ### Start local infrastructure (developers)
 
@@ -236,17 +247,19 @@ make dev-up-all
 
 This builds and starts:
 
-| Service | URL | Storage / deps |
-| ------- | --- | -------------- |
-| Gateway | http://localhost:8080 | Redis, registry API, token accounting |
-| Registry API | http://localhost:8081 | PostgreSQL |
-| Token accounting | http://localhost:8082 | ClickHouse |
-| PostgreSQL | localhost:5432 | — |
-| Redis | localhost:6379 | — |
-| ClickHouse | http://localhost:8123 | — |
-| Grafana | http://localhost:3001 | admin / `agentvoir` |
-| Prometheus | http://localhost:9090 | — |
-| OPA | http://localhost:8181 | — |
+
+| Service          | URL                                            | Storage / deps                        |
+| ---------------- | ---------------------------------------------- | ------------------------------------- |
+| Gateway          | [http://localhost:8080](http://localhost:8080) | Redis, registry API, token accounting |
+| Registry API     | [http://localhost:8081](http://localhost:8081) | PostgreSQL                            |
+| Token accounting | [http://localhost:8082](http://localhost:8082) | ClickHouse                            |
+| PostgreSQL       | localhost:5432                                 | —                                     |
+| Redis            | localhost:6379                                 | —                                     |
+| ClickHouse       | [http://localhost:8123](http://localhost:8123) | —                                     |
+| Grafana          | [http://localhost:3001](http://localhost:3001) | admin / `agentvoir`                   |
+| Prometheus       | [http://localhost:9090](http://localhost:9090) | —                                     |
+| OPA              | [http://localhost:8181](http://localhost:8181) | —                                     |
+
 
 Useful commands:
 

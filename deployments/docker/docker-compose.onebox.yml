@@ -1,12 +1,15 @@
 # AgentVoir onebox — self-contained all-in-one stack for try-outs.
 #
-# - Only AgentVoir API ports are published to the host (8080/8081/8082 by default)
-# - Postgres, Redis, ClickHouse, and OPA stay on the internal Docker network
-# - Uses project name "agentvoir-onebox" so it won't clash with other Compose stacks
+# End users: pull pre-built images (no compile, no Make required).
 #
-# Quick start:
 #   cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
-#   make onebox-up
+#   docker compose --env-file deployments/docker/.env.onebox \
+#     -f deployments/docker/docker-compose.onebox.yml pull
+#   docker compose --env-file deployments/docker/.env.onebox \
+#     -f deployments/docker/docker-compose.onebox.yml up -d
+#
+# Contributors building locally: add docker-compose.onebox.build.yml and --build
+# (see deployments/docker/INSTALL.md).
 
 name: agentvoir-onebox
 
@@ -57,9 +60,8 @@ services:
     restart: unless-stopped
 
   registry-api:
-    build:
-      context: ../..
-      dockerfile: apps/registry-api/Dockerfile
+    image: ${AGENTVOIR_IMAGE_REGISTRY:-ghcr.io/kaynor/agent-voir}/registry-api:${AGENTVOIR_VERSION:-latest}
+    pull_policy: missing
     ports:
       - "${AGENTVOIR_REGISTRY_PORT:-8081}:8081"
     environment:
@@ -72,9 +74,8 @@ services:
     restart: unless-stopped
 
   token-accounting:
-    build:
-      context: ../..
-      dockerfile: services/token-accounting/Dockerfile
+    image: ${AGENTVOIR_IMAGE_REGISTRY:-ghcr.io/kaynor/agent-voir}/token-accounting:${AGENTVOIR_VERSION:-latest}
+    pull_policy: missing
     ports:
       - "${AGENTVOIR_USAGE_PORT:-8082}:8082"
     environment:
@@ -86,9 +87,8 @@ services:
     restart: unless-stopped
 
   gateway:
-    build:
-      context: ../..
-      dockerfile: apps/gateway/Dockerfile
+    image: ${AGENTVOIR_IMAGE_REGISTRY:-ghcr.io/kaynor/agent-voir}/gateway:${AGENTVOIR_VERSION:-latest}
+    pull_policy: missing
     ports:
       - "${AGENTVOIR_GATEWAY_PORT:-8080}:8080"
     environment:

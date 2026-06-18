@@ -150,8 +150,10 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 - [x] Create `.env.onebox.example` for port and API key configuration
 - [x] Write end-user install guide (`deployments/docker/INSTALL.md`)
 - [x] Document onebox vs dev stack differences
-- [ ] Publish pre-built images to a container registry (skip local `--build`)
-- [ ] Add GitHub Actions workflow to build and push images on release
+- [x] Switch onebox to pre-built GHCR images (no local build for end users)
+- [x] Add GitHub Actions workflow to build and push images on release (`.github/workflows/release-images.yml`)
+- [x] Docker-only start path (`./scripts/onebox.sh` — no Make required)
+- [ ] Publish first GitHub Release and make GHCR packages public
 - [ ] Add docker-compose health wait script for smoother first-run UX
 
 ---

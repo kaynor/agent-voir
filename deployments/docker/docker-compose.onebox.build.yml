@@ -1,0 +1,23 @@
+# Developer override: build AgentVoir app images locally instead of pulling from GHCR.
+#
+#   docker compose --env-file deployments/docker/.env.onebox \
+#     -f deployments/docker/docker-compose.onebox.yml \
+#     -f deployments/docker/docker-compose.onebox.build.yml up -d --build
+#
+# Or: make onebox-up-build
+
+services:
+  registry-api:
+    build:
+      context: ../..
+      dockerfile: apps/registry-api/Dockerfile
+
+  token-accounting:
+    build:
+      context: ../..
+      dockerfile: services/token-accounting/Dockerfile
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: apps/gateway/Dockerfile

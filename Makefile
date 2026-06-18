@@ -1,13 +1,15 @@
 SHELL := /bin/bash
 
-.PHONY: help dev-up dev-up-all dev-down dev-logs onebox-up onebox-down onebox-logs onebox-reset onebox-smoke run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean
+.PHONY: help dev-up dev-up-all dev-down dev-logs onebox-up onebox-up-build onebox-down onebox-logs onebox-reset onebox-smoke run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean
 
 ONEBOX_COMPOSE := deployments/docker/docker-compose.onebox.yml
+ONEBOX_BUILD_COMPOSE := deployments/docker/docker-compose.onebox.build.yml
 ONEBOX_ENV := deployments/docker/.env.onebox
 
 help:
 	@echo "AgentVoir development commands"
-	@echo "  make onebox-up            Start isolated onebox stack (recommended for try-outs)"
+	@echo "  make onebox-up            Pull pre-built images and start onebox (end users)"
+	@echo "  make onebox-up-build      Build app images locally and start onebox (contributors)"
 	@echo "  make onebox-down          Stop onebox stack"
 	@echo "  make onebox-logs          Follow onebox stack logs"
 	@echo "  make onebox-reset         Stop onebox stack and delete onebox volumes"
@@ -40,7 +42,12 @@ dev-logs:
 
 onebox-up:
 	@cp -n deployments/docker/.env.onebox.example $(ONEBOX_ENV) || true
-	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) up -d --build
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) pull
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) up -d
+
+onebox-up-build:
+	@cp -n deployments/docker/.env.onebox.example $(ONEBOX_ENV) || true
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) -f $(ONEBOX_BUILD_COMPOSE) up -d --build
 
 onebox-down:
 	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) down
