@@ -4,10 +4,10 @@ about: Suggest an AgentVoir feature
 labels: enhancement
 ---
 
-## Problem
+## Task
 
-## Proposed solution
+## Requirements
 
-## Alternatives considered
+## Acceptance criteria
 
-## Enterprise/governance impact
+

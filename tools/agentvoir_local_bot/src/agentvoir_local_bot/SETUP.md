@@ -1,105 +1,85 @@
-# AgentVoir Local Bot
+**Use a dedicated virtual environment.** 
+The bot has its own dependencies (`cursor-sdk`, `pydantic-settings`, etc.) separate from the rest of the monorepo (`packages/sdk-python`). A venv keeps versions isolated and matches what `.gitignore` already expects (`.venv/` is ignored).
 
-Local worker that polls GitHub for issues labeled `ai-code`, runs a Cursor coding agent on your machine, runs tests, and opens a pull request for human review.
+## Setup (Windows / PowerShell)
 
-## Flow
+From the repo root:
 
-```text
-GitHub Issue (label: ai-code)
-        ↓
-Worker polls GitHub API
-        ↓
-Worker claims issue (label: ai-code-claimed)
-        ↓
-Creates local branch
-        ↓
-Runs Cursor agent locally (cursor-sdk)
-        ↓
-Runs tests (make test by default)
-        ↓
-Commits, pushes branch
-        ↓
-Creates PR via GitHub API
-        ↓
-You review and merge
-```
+```powershell
+cd d:\Projects\agentvoir\tools\agentvoir_local_bot
 
-## Prerequisites
+# 1. Create and activate a venv (Python 3.11+)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+You should see `(.venv)` in your prompt after activation.
 
-- Python 3.11+
-- Git with push access to the target repo
-- [Cursor API key](https://cursor.com/docs) (`CURSOR_API_KEY`)
-- GitHub personal access token with `repo` scope (`GITHUB_TOKEN`)
-
-## Setup
-
-```bash
-cd tools/agentvoir_local_bot
-cp .env.example .env
-# Edit .env with your tokens and repo
-
+# 2. Upgrade pip and install the bot + dev tools
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
+
+# 3. Configure secrets (needed to run the bot, not for unit tests)
+Copy-Item .env.example .env
+# Edit .env — set at minimum:
+#   GITHUB_TOKEN=...
+#   GITHUB_REPO=kaynor/agent-voir
+#   CURSOR_API_KEY=...
 ```
 
-## Run
+## Run tests
 
-Poll continuously (default):
+With the venv still active:
 
-```bash
-agentvoir-local-bot
-```
+```powershell
+cd d:\Projects\agentvoir\tools\agentvoir_local_bot
 
-Process one issue and exit:
-
-```bash
-agentvoir-local-bot --once
-```
-
-Or without installing the console script:
-
-```bash
-python -m agentvoir_local_bot
-```
-
-## GitHub labels
-
-| Label | Purpose |
-| ----- | ------- |
-| `ai-code` | Trigger — issue is ready for the bot |
-| `ai-code-claimed` | Bot is working on it |
-| `ai-code-done` | PR opened successfully |
-| `ai-code-failed` | Bot could not complete the issue |
-
-Label names are configurable via `.env`.
-
-## Configuration
-
-See [.env.example](.env.example). Key settings:
-
-| Variable | Description |
-| -------- | ----------- |
-| `GITHUB_TOKEN` | GitHub API token |
-| `GITHUB_REPO` | `owner/repo` to watch |
-| `CURSOR_API_KEY` | Cursor SDK API key |
-| `REPO_PATH` | Local git checkout (defaults to repo root) |
-| `TEST_COMMAND` | Shell command to validate changes (default: `make test`) |
-| `POLL_INTERVAL_SECONDS` | Poll interval when idle (default: 60) |
-
-## Issue workflow
-
-1. Create a GitHub issue describing the task.
-2. Add the `ai-code` label.
-3. Start the worker locally.
-4. The worker claims the issue, implements it with the Cursor agent, runs tests, and opens a PR.
-5. Review and merge the PR.
-
-Failed runs are labeled `ai-code-failed` with an error comment on the issue.
-
-## Development
-
-```bash
-cd tools/agentvoir_local_bot
-pip install -e ".[dev]"
 pytest
-ruff check .
 ```
+
+Or explicitly:
+
+```powershell
+python -m pytest -q
+```
+
+Optional lint:
+
+```powershell
+python -m ruff check .
+```
+
+The unit tests mock GitHub HTTP calls and build `Settings` in code, so **you don't need a real `.env` just to run `pytest`**.
+
+## Run the bot (after tests pass)
+
+```powershell
+# Still in tools/agentvoir_local_bot with .venv active
+agentvoir-local-bot --once    # process one issue and exit
+agentvoir-local-bot           # poll continuously
+```
+
+## Day-to-day
+
+Each new terminal session:
+
+```powershell
+cd d:\Projects\agentvoir\tools\agentvoir_local_bot
+.\.venv\Scripts\Activate.ps1
+```
+
+To leave the venv:
+
+```powershell
+deactivate
+```
+
+## Quick checklist
+
+| Step | Command |
+|------|---------|
+| Create venv | `python -m venv .venv` |
+| Activate | `.\.venv\Scripts\Activate.ps1` |
+| Install | `pip install -e ".[dev]"` |
+| Test | `pytest` |
+| Run bot | `agentvoir-local-bot --once` (needs `.env` + GitHub/Cursor keys) |
+
+**Note:** Default `TEST_COMMAND` is `make test`, which runs the **whole monorepo** test suite when the bot processes an issue. For bot development only, `pytest` inside `tools/agentvoir_local_bot` is enough. If you want the bot to only run its own tests after coding, set `TEST_COMMAND=pytest` in `.env`.

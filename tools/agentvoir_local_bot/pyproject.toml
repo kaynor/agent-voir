@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Local worker that polls GitHub for ai-code issues and runs a coding agent"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "AgentVoir maintainers" }]
+authors = [{ name = "Kailash Aynor" }, { name = "AgentVoir maintainers" }]
 dependencies = [
   "cursor-sdk>=0.1.0",
   "httpx>=0.27.0",
