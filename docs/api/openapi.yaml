@@ -1,7 +1,8 @@
 openapi: 3.1.0
 info:
-  title: AgentVoir API
+  title: AgentVoir Registry API
   version: 0.1.0
+  description: Control-plane registry for agents, prompts, dependencies, budgets, and model routes.
 paths:
   /healthz:
     get:
@@ -9,6 +10,7 @@ paths:
       responses:
         '200':
           description: OK
+
   /v1/agents:
     get:
       summary: List agents
@@ -20,3 +22,203 @@ paths:
       responses:
         '201':
           description: Created
+        '409':
+          description: Conflict
+
+  /v1/agents/{agentID}:
+    get:
+      summary: Get an agent
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent
+        '404':
+          description: Not found
+    put:
+      summary: Update an agent
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated agent
+    delete:
+      summary: Delete an agent
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: environment
+          in: query
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+
+  /v1/prompts:
+    get:
+      summary: List prompts
+      responses:
+        '200':
+          description: Prompt list
+    post:
+      summary: Register a prompt
+      responses:
+        '201':
+          description: Created
+
+  /v1/prompts/{promptID}:
+    get:
+      summary: Get a prompt
+      parameters:
+        - name: promptID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Prompt
+    put:
+      summary: Update a prompt
+      responses:
+        '200':
+          description: Updated prompt
+    delete:
+      summary: Delete a prompt
+      responses:
+        '204':
+          description: Deleted
+
+  /v1/agents/{agentID}/dependencies:
+    get:
+      summary: List agent dependencies
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dependency list
+    post:
+      summary: Add an agent dependency
+      responses:
+        '201':
+          description: Created
+
+  /v1/agents/{agentID}/dependencies/{dependencyID}:
+    delete:
+      summary: Remove an agent dependency
+      responses:
+        '204':
+          description: Deleted
+
+  /v1/agents/{agentID}/dependency-graph:
+    get:
+      summary: Get agent dependency graph
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dependency graph
+
+  /v1/agents/{agentID}/budget:
+    get:
+      summary: Get agent budget
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Budget
+    put:
+      summary: Upsert agent budget
+      responses:
+        '200':
+          description: Budget
+
+  /v1/agents/{agentID}/model-route:
+    get:
+      summary: Get agent model route
+      parameters:
+        - name: agentID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Model route
+    put:
+      summary: Upsert agent model route
+      responses:
+        '200':
+          description: Model route

@@ -315,7 +315,7 @@ x-trace-id: trace-id
 
 ### Phase 1: Registry and exact cache
 
-- Agent registration API
+- ✅ Agent registration API
 - Agent YAML manifest parser
 - OpenAI-compatible gateway endpoint
 - Redis exact cache
