@@ -44,7 +44,8 @@ class IssueWorker:
         issue = issues[0]
         logger.info("Selected issue #%s: %s", issue.number, issue.title)
         try:
-            self._process_issue(issue)
+            with self._git.temporary_bot_identity():
+                self._process_issue(issue)
         except Exception as err:
             logger.exception("Failed processing issue #%s", issue.number)
             self._github.mark_failed(issue.number, str(err))

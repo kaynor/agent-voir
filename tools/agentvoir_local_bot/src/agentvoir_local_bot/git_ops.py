@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import subprocess
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
 from agentvoir_local_bot.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class GitError(RuntimeError):
@@ -107,3 +112,39 @@ class GitOps:
         """Return the absolute path to the git repository root."""
         result = self.run(["git", "rev-parse", "--show-toplevel"])
         return Path(result.stdout.strip())
+
+    @contextmanager
+    def temporary_bot_identity(self) -> Iterator[None]:
+        """Apply bot git user.name/email for the duration of issue processing, then restore."""
+        if not self._settings.git_user_name:
+            yield
+            return
+
+        saved_name = self._get_local_config("user.name")
+        saved_email = self._get_local_config("user.email")
+        logger.info("Switching git identity to %s", self._settings.git_user_name)
+        try:
+            self._set_local_config("user.name", self._settings.git_user_name)
+            if self._settings.git_user_email:
+                self._set_local_config("user.email", self._settings.git_user_email)
+            yield
+        finally:
+            self._restore_local_config("user.name", saved_name)
+            self._restore_local_config("user.email", saved_email)
+            logger.debug("Restored previous git identity")
+
+    def _get_local_config(self, key: str) -> str | None:
+        result = self.run(["git", "config", "--local", key], check=False)
+        if result.returncode != 0:
+            return None
+        value = result.stdout.strip()
+        return value or None
+
+    def _set_local_config(self, key: str, value: str) -> None:
+        self.run(["git", "config", "--local", key, value])
+
+    def _restore_local_config(self, key: str, value: str | None) -> None:
+        if value is None:
+            self.run(["git", "config", "--local", "--unset", key], check=False)
+        else:
+            self._set_local_config(key, value)
