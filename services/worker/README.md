@@ -1,3 +1,3 @@
 # AgentVoir worker
 
-Placeholder service module.
+The worker service runs asynchronous background jobs for the AgentVoir control plane. It is intended to handle work that should not block the gateway or registry APIs, such as usage rollups, cache warming, and policy sync with OPA. These jobs keep analytics, caches, and governance state up to date as agents and traffic scale. The repository layout reserves this module for that role alongside the gateway, registry, and other services. Implementation is still a scaffold: the service structure is in place, but job handlers and queue integration are placeholders until the first implementation milestone.
