@@ -1,0 +1,115 @@
+# AgentVoir onebox — self-contained all-in-one stack for try-outs.
+#
+# - Only AgentVoir API ports are published to the host (8080/8081/8082 by default)
+# - Postgres, Redis, ClickHouse, and OPA stay on the internal Docker network
+# - Uses project name "agentvoir-onebox" so it won't clash with other Compose stacks
+#
+# Quick start:
+#   cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
+#   make onebox-up
+
+name: agentvoir-onebox
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: agentvoir
+      POSTGRES_USER: agentvoir
+      POSTGRES_PASSWORD: agentvoir
+    volumes:
+      - onebox-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentvoir -d agentvoir"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - onebox-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.6
+    volumes:
+      - onebox-clickhouse:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  opa:
+    image: openpolicyagent/opa:0.67.1
+    command: ["run", "--server", "--addr", ":8181", "/policies"]
+    volumes:
+      - ../../policies/opa:/policies:ro
+    restart: unless-stopped
+
+  registry-api:
+    build:
+      context: ../..
+      dockerfile: apps/registry-api/Dockerfile
+    ports:
+      - "${AGENTVOIR_REGISTRY_PORT:-8081}:8081"
+    environment:
+      REGISTRY_API_ADDR: ":8081"
+      POSTGRES_DSN: postgres://agentvoir:agentvoir@postgres:5432/agentvoir?sslmode=disable
+      MIGRATIONS_DIR: /db/migrations/postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  token-accounting:
+    build:
+      context: ../..
+      dockerfile: services/token-accounting/Dockerfile
+    ports:
+      - "${AGENTVOIR_USAGE_PORT:-8082}:8082"
+    environment:
+      TOKEN_ACCOUNTING_ADDR: ":8082"
+      CLICKHOUSE_DSN: http://clickhouse:8123
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: apps/gateway/Dockerfile
+    ports:
+      - "${AGENTVOIR_GATEWAY_PORT:-8080}:8080"
+    environment:
+      GATEWAY_ADDR: ":8080"
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-agentvoir-onebox-key}
+      REDIS_ADDR: redis:6379
+      CACHE_MODE: exact_only
+      CACHE_DEFAULT_TTL_SECONDS: "86400"
+      REGISTRY_API_URL: http://registry-api:8081
+      TOKEN_ACCOUNTING_URL: http://token-accounting:8082
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      registry-api:
+        condition: service_started
+      token-accounting:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  onebox-postgres:
+  onebox-redis:
+  onebox-clickhouse:

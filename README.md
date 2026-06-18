@@ -154,20 +154,116 @@ agentvoir/
 
 ### Prerequisites
 
-- Go 1.22+
-- Node.js 20+
-- Python 3.11+
+- Go 1.25+
+- Node.js 20+ (only for the web console)
 - Docker and Docker Compose
-- Make
+- Make (optional but recommended)
 
-### Start local infrastructure
+### Quick try (recommended for end users)
+
+See **[deployments/docker/INSTALL.md](deployments/docker/INSTALL.md)** for the full Docker install guide.
+
+The **onebox** stack is a self-contained all-in-one deployment: one command starts AgentVoir with its own Postgres, Redis, ClickHouse, and OPA on an **internal Docker network**. Nothing binds to `:5432`, `:6379`, or `:8123` on your host, so it won't conflict with other apps or database containers you already run.
+
+```bash
+make onebox-up
+make onebox-smoke
+```
+
+Default exposed ports (change in `deployments/docker/.env.onebox` if needed):
+
+| Service | URL | Notes |
+| ------- | --- | ----- |
+| Gateway | http://localhost:8080 | OpenAI-compatible API |
+| Registry API | http://localhost:8081 | Agent registry |
+| Token accounting | http://localhost:8082 | Usage events |
+
+Default gateway API key: `agentvoir-onebox-key`
+
+```bash
+export OPENAI_BASE_URL="http://localhost:8080/v1"
+export OPENAI_API_KEY="agentvoir-onebox-key"
+```
+
+Try a chat completion:
+
+```bash
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer agentvoir-onebox-key" \
+  -H "Content-Type: application/json" \
+  -H "x-agent-id: customer-support-agent" \
+  -d '{
+    "model": "gpt-4.1-mini",
+    "messages": [{"role": "user", "content": "Hello from AgentVoir onebox"}]
+  }'
+```
+
+Useful onebox commands:
+
+```bash
+make onebox-logs     # follow logs
+make onebox-down     # stop (keeps data volumes)
+make onebox-reset    # stop and wipe onebox data
+```
+
+Or use the bootstrap script:
+
+```bash
+./scripts/onebox.sh
+```
+
+**Onebox vs developer setup:** use `make onebox-up` to try AgentVoir in isolation. Use `make dev-up` / `make dev-up-all` when you want infra ports exposed on localhost for local Go/Node development. See [deployments/docker/README.md](deployments/docker/README.md).
+
+### Start local infrastructure (developers)
 
 ```bash
 cp .env.example .env
 make dev-up
 ```
 
-This starts local dependencies such as PostgreSQL, Redis, ClickHouse, OPA, Prometheus, Grafana, and the OpenTelemetry Collector.
+This starts PostgreSQL, Redis, ClickHouse, OPA, Prometheus, Grafana, and the OpenTelemetry Collector.
+
+### Run the full stack in Docker
+
+To run the AgentVoir application services in containers (registry API, token accounting, and gateway) on top of the same infrastructure:
+
+```bash
+cp .env.example .env
+make dev-up-all
+```
+
+This builds and starts:
+
+| Service | URL | Storage / deps |
+| ------- | --- | -------------- |
+| Gateway | http://localhost:8080 | Redis, registry API, token accounting |
+| Registry API | http://localhost:8081 | PostgreSQL |
+| Token accounting | http://localhost:8082 | ClickHouse |
+| PostgreSQL | localhost:5432 | — |
+| Redis | localhost:6379 | — |
+| ClickHouse | http://localhost:8123 | — |
+| Grafana | http://localhost:3001 | admin / `agentvoir` |
+| Prometheus | http://localhost:9090 | — |
+| OPA | http://localhost:8181 | — |
+
+Useful commands:
+
+```bash
+make dev-logs     # follow container logs
+make dev-down     # stop infrastructure and app containers
+```
+
+Optional: pass a real provider key to the gateway container:
+
+```bash
+OPENAI_API_KEY=sk-... make dev-up-all
+```
+
+The web console is not containerized yet; run it on the host with `make run-web` after `make dev-up-all`.
+
+### Run apps on the host (hybrid mode)
+
+Use `make dev-up` for infrastructure only, then run Go services locally against `localhost` URLs from `.env`.
 
 ### Run the registry API
 
@@ -180,6 +276,22 @@ Default local URL:
 ```text
 http://localhost:8081
 ```
+
+### Run token accounting (usage ingestion)
+
+```bash
+make run-token-accounting
+```
+
+Default local URL:
+
+```text
+http://localhost:8082
+```
+
+When `CLICKHOUSE_DSN` is set, usage events are stored in ClickHouse. Otherwise the service keeps events in memory for local development.
+
+The gateway emits usage events automatically when `TOKEN_ACCOUNTING_URL` is configured (default: `http://localhost:8082`).
 
 ### Run the gateway
 
@@ -203,6 +315,131 @@ Default local URL:
 
 ```text
 http://localhost:3000
+```
+
+### Client SDKs
+
+AgentVoir ships lightweight SDK skeletons for registering agents, calling the gateway, and querying usage events.
+
+#### Python
+
+```bash
+cd packages/sdk-python
+pip install -e ".[dev]"
+pytest
+```
+
+```python
+from agentvoir import AgentVoirClient, GatewayClient, RegisterAgentRequest, ChatCompletionRequest, ChatMessage
+
+registry = AgentVoirClient("http://localhost:8081")
+print(registry.list_agents())
+
+gateway = GatewayClient(
+    base_url="http://localhost:8080",
+    api_key="agentvoir-local-dev-key",
+    agent_id="customer-support-agent",
+)
+print(gateway.chat_completions(
+    ChatCompletionRequest(model="gpt-4.1-mini", messages=[ChatMessage(role="user", content="Hello")])
+))
+```
+
+See [packages/sdk-python/README.md](packages/sdk-python/README.md).
+
+#### TypeScript
+
+```bash
+cd packages/sdk-typescript
+npm install
+npm run build
+npm test
+```
+
+```typescript
+import { AgentVoirClient, GatewayClient } from "@agentvoir/sdk";
+
+const registry = new AgentVoirClient({ baseUrl: "http://localhost:8081" });
+console.log(await registry.listAgents());
+
+const gateway = new GatewayClient({
+  baseUrl: "http://localhost:8080",
+  apiKey: "agentvoir-local-dev-key",
+  agentId: "customer-support-agent",
+});
+console.log(await gateway.chatCompletions({
+  model: "gpt-4.1-mini",
+  messages: [{ role: "user", content: "Hello" }],
+}));
+```
+
+See [packages/sdk-typescript/README.md](packages/sdk-typescript/README.md).
+
+#### Go
+
+```bash
+cd packages/sdk-go
+go test ./...
+```
+
+See [packages/sdk-go/agentvoir/client.go](packages/sdk-go/agentvoir/client.go).
+
+### Usage event ingestion
+
+Every gateway chat completion emits a usage event with token counts, cost, cache status, latency, and trace metadata. Events are sent asynchronously to the token-accounting service so request latency is not affected.
+
+Start the ingestion service, then point the gateway at it. With Docker Compose, `make dev-up-all` starts token accounting and the gateway together:
+
+```bash
+make dev-up-all
+```
+
+Or run services on the host:
+
+```bash
+make run-token-accounting
+export TOKEN_ACCOUNTING_URL=http://localhost:8082
+make run-gateway
+```
+
+Send a gateway request:
+
+```bash
+curl http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer agentvoir-local-dev-key" \
+  -H "Content-Type: application/json" \
+  -H "x-agent-id: customer-support-agent" \
+  -H "x-tenant-id: acme" \
+  -H "x-user-id: user-42" \
+  -d '{
+    "model": "gpt-4.1-mini",
+    "messages": [{"role": "user", "content": "Summarize this support ticket."}],
+    "temperature": 0
+  }'
+```
+
+Query ingested events:
+
+```bash
+curl "http://localhost:8082/v1/usage-events?agent_id=customer-support-agent&limit=10"
+```
+
+You can also ingest events directly (for custom agents or batch replays):
+
+```bash
+curl -X POST http://localhost:8082/v1/usage-events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_id": "customer-support-agent",
+    "agent_version": "0.1.0",
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "cache_status": "miss",
+    "prompt_tokens": 120,
+    "completion_tokens": 45,
+    "cost_usd": 0.0021,
+    "latency_ms": 812
+  }'
 ```
 
 ---
@@ -281,7 +518,7 @@ export OPENAI_BASE_URL="http://localhost:8080/v1"
 export OPENAI_API_KEY="agentvoir-local-dev-key"
 ```
 
-Example future endpoint:
+Example endpoint:
 
 ```bash
 curl http://localhost:8080/v1/chat/completions \
@@ -316,13 +553,13 @@ x-trace-id: trace-id
 ### Phase 1: Registry and exact cache
 
 - ✅ Agent registration API
-- Agent YAML manifest parser
-- OpenAI-compatible gateway endpoint
-- Redis exact cache
-- PostgreSQL metadata schema
-- Usage event ingestion
-- Docker Compose environment
-- Python and TypeScript SDK skeletons
+- ✅ Agent YAML manifest parser
+- ✅ OpenAI-compatible gateway endpoint
+- ✅ Redis exact cache
+- ✅ PostgreSQL metadata schema
+- ✅ Usage event ingestion
+- ✅ Docker Compose environment
+- ✅ Python and TypeScript SDK skeletons
 
 ### Phase 2: Enterprise controls
 

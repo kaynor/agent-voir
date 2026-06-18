@@ -1,19 +1,35 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/agentvoir/agentvoir/apps/registry-api/internal/postgres"
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/server"
 )
 
 func main() {
 	addr := env("REGISTRY_API_ADDR", ":8081")
+	dsn := os.Getenv("POSTGRES_DSN")
 
-	stores := server.NewStores()
+	var stores *server.Stores
+	if dsn != "" {
+		pool, err := postgres.Open(context.Background(), dsn)
+		if err != nil {
+			log.Fatalf("postgres init failed: %v", err)
+		}
+		defer pool.Close()
+		stores = server.NewPostgresStores(pool)
+		log.Printf("AgentVoir registry API using PostgreSQL metadata store")
+	} else {
+		stores = server.NewMemoryStores()
+		log.Printf("AgentVoir registry API using in-memory store (set POSTGRES_DSN for PostgreSQL)")
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthz)
 	server.RegisterRoutes(mux, stores)

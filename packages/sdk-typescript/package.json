@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node --test",
+    "test": "npm run build && node --test test/client.test.js",
     "lint": "tsc --noEmit",
     "format": "prettier --write ."
   },

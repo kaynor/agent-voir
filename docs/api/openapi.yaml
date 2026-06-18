@@ -222,3 +222,35 @@ paths:
       responses:
         '200':
           description: Model route
+
+  /v1/agents/parse-manifest:
+    post:
+      summary: Parse an agent YAML manifest without registering
+      requestBody:
+        required: true
+        content:
+          application/yaml:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: Parsed manifest document
+        '400':
+          description: Invalid manifest
+
+  /v1/agents/from-manifest:
+    post:
+      summary: Parse and register an agent from a YAML manifest
+      requestBody:
+        required: true
+        content:
+          application/yaml:
+            schema:
+              type: string
+      responses:
+        '201':
+          description: Registered agent and related resources
+        '400':
+          description: Invalid manifest
+        '409':
+          description: Agent already exists

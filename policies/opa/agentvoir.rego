@@ -1,5 +1,7 @@
 package agentvoir.authz
 
+import rego.v1
+
 default allow := false
 
 default cache_allowed := false
@@ -28,13 +30,12 @@ semantic_cache_allowed if {
   count(input.agent.dataClasses) == 0
 }
 
-deny[reason] if {
+deny contains "agent is not approved for PII" if {
   input.request.contains_pii
   input.agent.policies.piiAllowed == false
-  reason := "agent is not approved for PII"
 }
 
-deny[reason] if {
+deny contains reason if {
   not input.request.provider in input.agent.policies.allowedProviders
   reason := sprintf("provider %s is not approved for this agent", [input.request.provider])
 }

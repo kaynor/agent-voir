@@ -1,14 +1,26 @@
 SHELL := /bin/bash
 
-.PHONY: help dev-up dev-down run-gateway run-api run-web fmt test lint clean
+.PHONY: help dev-up dev-up-all dev-down dev-logs onebox-up onebox-down onebox-logs onebox-reset onebox-smoke run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean
+
+ONEBOX_COMPOSE := deployments/docker/docker-compose.onebox.yml
+ONEBOX_ENV := deployments/docker/.env.onebox
 
 help:
 	@echo "AgentVoir development commands"
-	@echo "  make dev-up        Start local dependencies"
-	@echo "  make dev-down      Stop local dependencies"
-	@echo "  make run-gateway   Run Go gateway"
-	@echo "  make run-api       Run Go registry API"
-	@echo "  make run-web       Run Next.js web app"
+	@echo "  make onebox-up            Start isolated onebox stack (recommended for try-outs)"
+	@echo "  make onebox-down          Stop onebox stack"
+	@echo "  make onebox-logs          Follow onebox stack logs"
+	@echo "  make onebox-reset         Stop onebox stack and delete onebox volumes"
+	@echo "  make onebox-smoke         Run health checks against onebox stack"
+	@echo "  make dev-up               Start local infrastructure (Postgres, Redis, ClickHouse, ...)"
+	@echo "  make dev-up-all           Start infrastructure + AgentVoir apps in Docker"
+	@echo "  make dev-down             Stop Docker Compose services"
+	@echo "  make dev-logs             Follow Docker Compose logs"
+	@echo "  make db-migrate           Apply PostgreSQL metadata migrations"
+	@echo "  make run-gateway          Run Go gateway locally"
+	@echo "  make run-api              Run Go registry API locally"
+	@echo "  make run-token-accounting Run usage event ingestion service locally"
+	@echo "  make run-web              Run Next.js web app"
 	@echo "  make fmt           Format code"
 	@echo "  make test          Run tests"
 	@echo "  make lint          Run lint checks"
@@ -17,8 +29,41 @@ help:
 dev-up:
 	docker compose -f deployments/docker/docker-compose.yml up -d
 
+dev-up-all:
+	docker compose -f deployments/docker/docker-compose.yml --profile apps up -d --build
+
 dev-down:
-	docker compose -f deployments/docker/docker-compose.yml down
+	docker compose -f deployments/docker/docker-compose.yml --profile apps down
+
+dev-logs:
+	docker compose -f deployments/docker/docker-compose.yml --profile apps logs -f
+
+onebox-up:
+	@cp -n deployments/docker/.env.onebox.example $(ONEBOX_ENV) || true
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) up -d --build
+
+onebox-down:
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) down
+
+onebox-logs:
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) logs -f
+
+onebox-reset:
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) down -v
+
+onebox-smoke:
+	@set -a && source $(ONEBOX_ENV) && set +a && \
+	GATEWAY_PORT=$${AGENTVOIR_GATEWAY_PORT:-8080} && \
+	REGISTRY_PORT=$${AGENTVOIR_REGISTRY_PORT:-8081} && \
+	USAGE_PORT=$${AGENTVOIR_USAGE_PORT:-8082} && \
+	API_KEY=$${GATEWAY_API_KEY:-agentvoir-onebox-key} && \
+	echo "==> registry /healthz" && curl -fsS "http://localhost:$$REGISTRY_PORT/healthz" && echo && \
+	echo "==> usage /healthz" && curl -fsS "http://localhost:$$USAGE_PORT/healthz" && echo && \
+	echo "==> gateway /healthz" && curl -fsS "http://localhost:$$GATEWAY_PORT/healthz" && echo && \
+	echo "==> gateway /v1/models" && curl -fsS "http://localhost:$$GATEWAY_PORT/v1/models" -H "Authorization: Bearer $$API_KEY" | head -c 200 && echo
+
+db-migrate:
+	cd apps/registry-api && go run ./cmd/migrate
 
 run-gateway:
 	cd apps/gateway && go run ./cmd/gateway
@@ -26,11 +71,14 @@ run-gateway:
 run-api:
 	cd apps/registry-api && go run ./cmd/registry-api
 
+run-token-accounting:
+	cd services/token-accounting && go run ./cmd/token-accounting
+
 run-web:
 	cd apps/web && npm install && npm run dev
 
 fmt:
-	gofmt -w apps/gateway apps/registry-api packages/sdk-go || true
+	gofmt -w apps/gateway apps/registry-api services/token-accounting packages/sdk-go || true
 	cd apps/web && npm run format || true
 	cd packages/sdk-typescript && npm run format || true
 	cd packages/sdk-python && python -m ruff format . || true
@@ -38,6 +86,7 @@ fmt:
 test:
 	cd apps/gateway && go test ./...
 	cd apps/registry-api && go test ./...
+	cd services/token-accounting && go test ./...
 	cd packages/sdk-go && go test ./...
 	cd packages/sdk-python && python -m pytest || true
 	cd packages/sdk-typescript && npm test || true

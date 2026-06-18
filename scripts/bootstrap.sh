@@ -2,9 +2,9 @@
 set -euo pipefail
 
 cp -n .env.example .env || true
-make dev-up
+cp -n deployments/docker/.env.onebox.example deployments/docker/.env.onebox || true
+make onebox-up
 
-echo "AgentVoir local dependencies are starting."
-echo "Registry API: make run-api"
-echo "Gateway:      make run-gateway"
-echo "Web console:  make run-web"
+echo ""
+echo "For isolated try-out (recommended): make onebox-up  (already started above)"
+echo "For developer infra only:           make dev-up"

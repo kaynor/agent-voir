@@ -9,6 +9,11 @@ services:
       - "5432:5432"
     volumes:
       - agentvoir-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentvoir -d agentvoir"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -17,6 +22,11 @@ services:
       - "6379:6379"
     volumes:
       - agentvoir-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   clickhouse:
     image: clickhouse/clickhouse-server:24.6
@@ -25,6 +35,11 @@ services:
       - "9000:9000"
     volumes:
       - agentvoir-clickhouse:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   opa:
     image: openpolicyagent/opa:0.67.1
@@ -59,6 +74,59 @@ services:
       - "4318:4318"
     volumes:
       - ../../observability/otel/collector.yml:/etc/otelcol/config.yml:ro
+
+  registry-api:
+    profiles: ["apps"]
+    build:
+      context: ../..
+      dockerfile: apps/registry-api/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      REGISTRY_API_ADDR: ":8081"
+      POSTGRES_DSN: postgres://agentvoir:agentvoir@postgres:5432/agentvoir?sslmode=disable
+      MIGRATIONS_DIR: /db/migrations/postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  token-accounting:
+    profiles: ["apps"]
+    build:
+      context: ../..
+      dockerfile: services/token-accounting/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      TOKEN_ACCOUNTING_ADDR: ":8082"
+      CLICKHOUSE_DSN: http://clickhouse:8123
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+
+  gateway:
+    profiles: ["apps"]
+    build:
+      context: ../..
+      dockerfile: apps/gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      GATEWAY_ADDR: ":8080"
+      GATEWAY_API_KEY: agentvoir-local-dev-key
+      REDIS_ADDR: redis:6379
+      CACHE_MODE: exact_only
+      CACHE_DEFAULT_TTL_SECONDS: "86400"
+      REGISTRY_API_URL: http://registry-api:8081
+      TOKEN_ACCOUNTING_URL: http://token-accounting:8082
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      registry-api:
+        condition: service_started
+      token-accounting:
+        condition: service_started
 
 volumes:
   agentvoir-postgres:
