@@ -1,2 +1,27 @@
-# Replace with actual maintainers once the project is published.
-* @agentvoir/maintainers
+# Global default owner
+* @kaynor
+
+# Gateway/proxy
+/apps/gateway/ @kaynor
+
+# Registry API
+/apps/registry-api/ @kaynor
+
+# Web console
+/apps/web/ @kaynor
+
+# SDKs
+/packages/ @kaynor
+
+# Security and policy
+/policies/ @kaynor
+/SECURITY.md @kaynor
+
+# Infrastructure and observability
+/deployments/ @kaynor
+/observability/ @kaynor
+
+# Docs and examples
+/docs/ @kaynor
+/examples/ @kaynor
+/README.md @kaynor
