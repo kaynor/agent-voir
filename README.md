@@ -1,4 +1,4 @@
-![License](https://img.shields.io/github/license/kaynor/agent-voir)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Stars](https://img.shields.io/github/stars/kaynor/agent-voir)
 ![Issues](https://img.shields.io/github/issues/kaynor/agent-voir)
 ![Last Commit](https://img.shields.io/github/last-commit/kaynor/agent-voir)
