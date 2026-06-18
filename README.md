@@ -2,6 +2,16 @@
 
 **AgentVoir** is an open-source control plane and low-latency LLM gateway for enterprise AI agents.
 
+---
+
+## A project of the Agents, by the Agents and for the Agents !!
+
+---
+
+** This project uses Agent Bots to design and code features for this project.
+
+
+
 It helps enterprises **register agents**, **govern model/tool access**, **track token usage and cost**, **map dependencies**, **enforce policy-as-code**, and **cache repeated LLM requests** through an OpenAI-compatible proxy.
 
 > Status: early scaffold. This repository is structured for an enterprise-grade implementation, but many modules are intentionally placeholders until the first implementation milestone lands.
@@ -121,20 +131,22 @@ agentvoir/
 
 ## Suggested tech stack
 
-| Layer | Stack |
-|---|---|
-| Gateway | Go, net/http, Redis, OpenTelemetry |
-| Registry API | Go, PostgreSQL, sqlc or pgx |
-| Admin UI | Next.js, React, TypeScript |
-| Hot cache | Redis |
-| Semantic cache | RedisVL, Qdrant, or pgvector |
-| Metadata DB | PostgreSQL |
-| Analytics | ClickHouse |
-| Policy engine | OPA/Rego |
-| Observability | OpenTelemetry, Prometheus, Grafana |
-| Events/jobs | NATS, Kafka, Redpanda, or Redis Streams |
-| Deployment | Docker Compose, Helm, Kubernetes |
-| SDKs | Python, TypeScript, Go |
+
+| Layer          | Stack                                   |
+| -------------- | --------------------------------------- |
+| Gateway        | Go, net/http, Redis, OpenTelemetry      |
+| Registry API   | Go, PostgreSQL, sqlc or pgx             |
+| Admin UI       | Next.js, React, TypeScript              |
+| Hot cache      | Redis                                   |
+| Semantic cache | RedisVL, Qdrant, or pgvector            |
+| Metadata DB    | PostgreSQL                              |
+| Analytics      | ClickHouse                              |
+| Policy engine  | OPA/Rego                                |
+| Observability  | OpenTelemetry, Prometheus, Grafana      |
+| Events/jobs    | NATS, Kafka, Redpanda, or Redis Streams |
+| Deployment     | Docker Compose, Helm, Kubernetes        |
+| SDKs           | Python, TypeScript, Go                  |
+
 
 ---
 
@@ -247,14 +259,16 @@ spec:
 
 ## Gateway cache modes
 
-| Mode | Description |
-|---|---|
-| `off` | No cache read or write |
-| `exact_only` | Cache only exact normalized requests |
-| `semantic_safe` | Semantic cache for approved non-sensitive use cases |
-| `semantic_aggressive` | Higher hit rate, not default for enterprise workloads |
-| `write_only` | Write entries but never serve from cache; useful for testing |
-| `shadow` | Compare cache answer with live model answer without serving cached response |
+
+| Mode                  | Description                                                                 |
+| --------------------- | --------------------------------------------------------------------------- |
+| `off`                 | No cache read or write                                                      |
+| `exact_only`          | Cache only exact normalized requests                                        |
+| `semantic_safe`       | Semantic cache for approved non-sensitive use cases                         |
+| `semantic_aggressive` | Higher hit rate, not default for enterprise workloads                       |
+| `write_only`          | Write entries but never serve from cache; useful for testing                |
+| `shadow`              | Compare cache answer with live model answer without serving cached response |
+
 
 ---
 
@@ -301,42 +315,42 @@ x-trace-id: trace-id
 
 ### Phase 1: Registry and exact cache
 
-- [ ] Agent registration API
-- [ ] Agent YAML manifest parser
-- [ ] OpenAI-compatible gateway endpoint
-- [ ] Redis exact cache
-- [ ] PostgreSQL metadata schema
-- [ ] Usage event ingestion
-- [ ] Docker Compose environment
-- [ ] Python and TypeScript SDK skeletons
+- Agent registration API
+- Agent YAML manifest parser
+- OpenAI-compatible gateway endpoint
+- Redis exact cache
+- PostgreSQL metadata schema
+- Usage event ingestion
+- Docker Compose environment
+- Python and TypeScript SDK skeletons
 
 ### Phase 2: Enterprise controls
 
-- [ ] OIDC authentication
-- [ ] RBAC and service accounts
-- [ ] Per-agent budgets
-- [ ] Per-agent and per-tenant rate limits
-- [ ] Audit logging
-- [ ] Provider routing and fallback
-- [ ] Dependency graph API
-- [ ] OpenTelemetry traces and Prometheus metrics
+- OIDC authentication
+- RBAC and service accounts
+- Per-agent budgets
+- Per-agent and per-tenant rate limits
+- Audit logging
+- Provider routing and fallback
+- Dependency graph API
+- OpenTelemetry traces and Prometheus metrics
 
 ### Phase 3: Semantic cache and evals
 
-- [ ] RedisVL/Qdrant semantic cache
-- [ ] Cache shadow mode
-- [ ] Prompt registry
-- [ ] Eval datasets and regression runner
-- [ ] Agent scorecards
-- [ ] PII/secret detection hooks
+- RedisVL/Qdrant semantic cache
+- Cache shadow mode
+- Prompt registry
+- Eval datasets and regression runner
+- Agent scorecards
+- PII/secret detection hooks
 
 ### Phase 4: Kubernetes-native control plane
 
-- [ ] Helm chart
-- [ ] Kubernetes CRDs: `Agent`, `Prompt`, `ModelRoute`, `AgentPolicy`
-- [ ] Admission controller
-- [ ] GitOps examples
-- [ ] Multi-region routing examples
+- Helm chart
+- Kubernetes CRDs: `Agent`, `Prompt`, `ModelRoute`, `AgentPolicy`
+- Admission controller
+- GitOps examples
+- Multi-region routing examples
 
 ---
 
