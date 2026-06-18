@@ -1,3 +1,3 @@
 # AgentVoir token-accounting
 
-Placeholder service module.
+The token-accounting service aggregates usage and cost for the AgentVoir control plane. It is intended to track token consumption and spend across agents, teams, and models so operators can monitor budgets, allocate costs, and analyze model usage over time. The repository layout reserves this module as the usage/cost aggregation service alongside the gateway, registry, and other services. Implementation is still a scaffold: the service structure is in place, but aggregation pipelines, storage integration, and reporting APIs are placeholders until the first implementation milestone.
