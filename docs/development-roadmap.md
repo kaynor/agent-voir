@@ -7,13 +7,85 @@ This document expands the high-level roadmap in [README.md](../README.md) into c
 
 Status legend:
 
-| Symbol | Meaning |
-| ------ | ------- |
-| ✅ | Done (Phase 1 baseline) |
-| 🟡 | Partially done — foundation exists, more work needed |
-| ⬜ | Not started |
+
+| Symbol | Meaning                                              |
+| ------ | ---------------------------------------------------- |
+| ✅      | Done                                                 |
+| 🟡     | Partially done — foundation exists, more work needed |
+| ⬜      | Not started                                          |
+| 🔒     | Blocked or waiting on an external prerequisite       |
+
 
 For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see [Tech Stack Usage](architecture/tech-stack-usage.md).
+
+---
+
+## Phase 0: Developer experience and project trust
+
+**Goal:** Make AgentVoir easy to understand, run, evaluate, and contribute to. This phase improves first impressions for open-source users, future contributors, and enterprise evaluators.
+
+---
+
+### ⬜ Quickstart smoke test
+
+**What it means:** A single command should prove that the core AgentVoir flow works end-to-end: start the stack, register a demo agent, call the gateway, observe cache behavior, and show a usage event.
+
+**TODO items:**
+
+- [ ] Add `./scripts/quickstart.sh`
+- [ ] Start the onebox Docker stack from the script
+- [ ] Register a demo `customer-support-agent`
+- [ ] Send a sample chat completion through the gateway
+- [ ] Show first request as cache miss and repeated request as cache hit
+- [ ] Print usage event summary after the request
+- [ ] Add quickstart output examples to README
+- [ ] Add troubleshooting section for ports, Docker, and missing API keys
+
+---
+
+### ⬜ Public demo scenario
+
+**What it means:** A small, realistic demo helps users understand why AgentVoir exists before they read the full architecture.
+
+**TODO items:**
+
+- [ ] Create `examples/agents/customer-support-agent.yaml`
+- [ ] Include sample prompt, model route, budget, cache policy, and dependencies
+- [ ] Include a sample LLM request and response
+- [ ] Include a sample policy denial scenario
+- [ ] Include screenshot or terminal output in README
+- [ ] Add "demo walk-through" documentation under `docs/demo/`
+
+---
+
+### ⬜ Contribution-ready issue backlog
+
+**What it means:** New contributors should be able to find scoped tasks quickly, and AI-assisted coding workflows should have well-structured issues to consume.
+
+**TODO items:**
+
+- [ ] Create labeled GitHub issues for gateway, registry-api, SDK, docs, security, and observability
+- [ ] Add `good-first-issue` and `help-wanted` labels to approachable tasks
+- [ ] Add issue templates for bug reports, feature requests, and AI coding tasks
+- [ ] Add pull request template with AI-assistance disclosure
+- [ ] Add `docs/AI_CONTRIBUTION_POLICY.md`
+- [ ] Add architecture decision records under `docs/adr/`
+- [ ] Add `CODEOWNERS` for key modules
+
+---
+
+### ⬜ API documentation portal
+
+**What it means:** Users should be able to explore AgentVoir APIs without reading source code.
+
+**TODO items:**
+
+- [ ] Generate OpenAPI spec for registry API
+- [ ] Generate OpenAPI spec for gateway API extensions
+- [ ] Publish Swagger UI or Redoc locally in the Docker stack
+- [ ] Add API docs to GitHub Pages
+- [ ] Add examples for authentication, agent registration, gateway calls, usage queries, and policy simulation
+- [ ] Add SDK examples that map to each API section
 
 ---
 
@@ -179,6 +251,25 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 ---
 
+### ⬜ Release security and software supply chain
+
+**What it means:** Enterprises need to trust the artifacts they run. AgentVoir releases should include signed images, software bills of materials, vulnerability scans, and provenance so operators can verify what they deploy.
+
+**TODO items:**
+
+- [ ] Generate SBOM for every Docker image
+- [ ] Sign container images with Sigstore/cosign
+- [ ] Publish provenance attestation for release builds
+- [ ] Add vulnerability scanning for images and dependencies
+- [ ] Add dependency review in CI
+- [ ] Add license scanning in CI
+- [ ] Pin GitHub Actions versions or use trusted reusable workflows
+- [ ] Add release checklist for maintainers
+- [ ] Document artifact verification steps for users
+- [ ] Add `SECURITY.md` release and disclosure expectations
+
+---
+
 ## Phase 2: Enterprise controls
 
 **Goal:** Make AgentVoir safe and manageable for real enterprise deployments — proper login, permissions, spending limits, audit trails, and operational visibility.
@@ -275,6 +366,28 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 ---
 
+### ⬜ Policy-as-code engine
+
+**What it means:** A centralized policy layer decides whether an agent may call a model, use a tool, cache a response, access a dependency, or move to production. This makes AgentVoir a governance control plane instead of only a proxy.
+
+**TODO items:**
+
+- [ ] Define standard OPA input schema for gateway requests
+- [ ] Define standard OPA input schema for registry mutations
+- [ ] Add default policy: deny semantic cache when PII is present
+- [ ] Add default policy: deny production agents without owner/team
+- [ ] Add default policy: deny unapproved model providers
+- [ ] Add default policy: deny high-risk agents without audit logging
+- [ ] Add default policy: deny tool access outside approved dependency list
+- [ ] Implement gateway policy check before provider call
+- [ ] Implement registry policy check before lifecycle promotion
+- [ ] Add policy decision logs to audit events
+- [ ] Add policy test fixtures using `opa test`
+- [ ] Add policy simulation endpoint: `POST /v1/policies/simulate`
+- [ ] Document "Writing AgentVoir policies"
+
+---
+
 ### 🟡 Provider routing and fallback
 
 **What it means:** If the primary AI provider (e.g. OpenAI) is down, slow, or rejects a request, AgentVoir automatically tries a backup provider (e.g. Anthropic) according to rules defined for each agent — similar to how DNS failover works for websites.
@@ -295,6 +408,27 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 ---
 
+### ⬜ Provider adapter conformance suite
+
+**What it means:** Every model provider adapter should behave consistently so routing, caching, cost tracking, streaming, and fallback work the same way across OpenAI, Anthropic, Azure OpenAI, Gemini, Bedrock, and local models.
+
+**TODO items:**
+
+- [ ] Define provider adapter interface
+- [ ] Define normalized request and response structs
+- [ ] Add conformance tests for non-streaming chat
+- [ ] Add conformance tests for streaming chat
+- [ ] Add conformance tests for tool calls
+- [ ] Add conformance tests for provider errors and timeouts
+- [ ] Add conformance tests for token usage extraction
+- [ ] Add finish reason mapping across providers
+- [ ] Add mock provider test harness
+- [ ] Add adapter capability discovery (streaming, tools, JSON mode, embeddings)
+- [ ] Add per-provider retry/backoff config
+- [ ] Document how contributors can add a new provider
+
+---
+
 ### 🟡 Dependency graph API
 
 **What it means:** A map of what each agent depends on — other agents, tools (Zendesk, Salesforce), vector databases, MCP servers. Helps answer impact analysis: "If we change this tool, which agents break?"
@@ -311,6 +445,26 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 - [ ] Detect circular agent dependencies and reject on registration
 - [ ] Export graph as JSON/GraphML for external tools
 - [ ] Link dependency changes to audit log
+
+---
+
+### ⬜ Tool and MCP server registry
+
+**What it means:** Agent risk depends heavily on the tools an agent can invoke. AgentVoir should track tools and MCP servers as governed dependencies with owners, permissions, risk levels, secrets, and audit requirements.
+
+**TODO items:**
+
+- [ ] Define tool registry model (`tool_id`, name, owner, protocol, risk level, allowed scopes)
+- [ ] Support tool protocols: HTTP, gRPC, MCP, and function-style tools
+- [ ] Define MCP server registry model
+- [ ] Link tools and MCP servers to agent dependencies
+- [ ] Enforce tool allowlist in gateway/policy layer
+- [ ] Add tool-call audit events
+- [ ] Add tool-call traces using OpenTelemetry
+- [ ] Add tool risk review workflow
+- [ ] Add "disable tool globally" kill switch
+- [ ] Add docs: "Registering MCP servers and tools"
+- [ ] Add example MCP server manifest
 
 ---
 
@@ -334,9 +488,108 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 ---
 
+### ⬜ Pre-flight token and cost estimation
+
+**What it means:** AgentVoir should estimate token usage and maximum cost before calling a provider. This allows policy checks, budget enforcement, warnings, and routing decisions before money is spent.
+
+**TODO items:**
+
+- [ ] Add tokenizer abstraction per provider/model family
+- [ ] Estimate input tokens before provider call
+- [ ] Estimate maximum possible output cost from `max_tokens`
+- [ ] Compare estimated cost against per-request budget
+- [ ] Add `x-estimated-cost-usd` debug/response header when enabled
+- [ ] Add dry-run endpoint: `POST /v1/chat/completions:estimate`
+- [ ] Add policy rule: block request if estimated cost exceeds threshold
+- [ ] Add tests for tokenizer drift and unknown-model fallback behavior
+- [ ] Document model pricing table update workflow
+
+---
+
+### ⬜ Human-in-the-loop approval gates
+
+**What it means:** Some actions should pause until an authorized human approves them — for example high-risk tool calls, production agent promotion, expensive requests, or sensitive data export.
+
+**TODO items:**
+
+- [ ] Define approval request model
+- [ ] Add approval policy: require approval for high-risk tools
+- [ ] Add approval policy: require approval for production lifecycle promotion
+- [ ] Add approval policy: require approval when estimated cost exceeds threshold
+- [ ] Add approval policy: require approval for data export tools
+- [ ] Implement `POST /v1/approvals`
+- [ ] Implement approve/reject endpoints
+- [ ] Add approval audit log events
+- [ ] Add Slack, email, or webhook notification integration
+- [ ] Add web console approval queue
+- [ ] Add timeout/expiry behavior
+
+---
+
+### ⬜ Prompt injection and tool-call security
+
+**What it means:** Untrusted text can try to override system instructions, exfiltrate secrets, or trick an agent into unsafe tool calls. AgentVoir should make trusted/untrusted boundaries explicit and enforce tool-call safety policies.
+
+**TODO items:**
+
+- [ ] Mark input sources as trusted vs untrusted
+- [ ] Add prompt-injection detector hook before tool execution
+- [ ] Add policy rule: untrusted content cannot authorize tool calls
+- [ ] Add tool-call confirmation policy for high-risk tools
+- [ ] Add allowlist/denylist for tool names and arguments
+- [ ] Add argument schema validation before tool execution
+- [ ] Add secret redaction before model calls
+- [ ] Add response filtering for system prompt leakage
+- [ ] Add attack simulation test cases
+- [ ] Add docs: "Prompt injection threat model"
+
+---
+
+### ⬜ Admin web console
+
+**What it means:** A browser UI makes AgentVoir easier to demo and operate. Platform teams should be able to inspect agents, dependencies, cost, cache behavior, policies, eval results, and approvals without querying raw APIs.
+
+**TODO items:**
+
+- [ ] Agent list and detail pages
+- [ ] Agent registration form
+- [ ] Manifest upload and validation UI
+- [ ] Dependency graph visualization
+- [ ] Cost and token usage dashboard
+- [ ] Cache hit/miss dashboard
+- [ ] Policy decision viewer
+- [ ] Audit event explorer
+- [ ] Prompt version viewer and diff page
+- [ ] Eval results comparison page
+- [ ] Approval queue
+- [ ] Provider health page
+
+---
+
 ## Phase 3: Semantic cache and evals
 
 **Goal:** Smarter caching (similar questions get similar answers), systematic quality testing for agents, and safety hooks for sensitive data.
+
+---
+
+### ⬜ Cache correctness and safety framework
+
+**What it means:** Caching must be safe before it is clever. AgentVoir should prove that cached responses cannot leak data across tenants, agents, prompts, policies, users, tools, or model versions.
+
+**TODO items:**
+
+- [ ] Define canonical cache key contract
+- [ ] Include tenant, agent, model, prompt version, tools, response format, policy version, and context hash in cache key
+- [ ] Add cache-key golden tests
+- [ ] Add tenant-isolation tests
+- [ ] Add policy-version invalidation tests
+- [ ] Add prompt-version invalidation tests
+- [ ] Add RAG-context invalidation tests
+- [ ] Add cache poisoning tests
+- [ ] Add cache replay tests
+- [ ] Add request-level and agent-level `never_cache` policy
+- [ ] Add cache explain endpoint: `GET /v1/cache/explain?trace_id=...`
+- [ ] Document cache safety model and invalidation rules
 
 ---
 
@@ -545,11 +798,99 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 ---
 
+## Phase 5: Ecosystem and integrations
+
+**Goal:** Make AgentVoir useful inside real enterprise AI stacks by integrating with agent frameworks, CI/CD systems, observability tools, and data platforms.
+
+---
+
+### ⬜ Framework integrations
+
+**What it means:** Teams should be able to adopt AgentVoir without rewriting every agent. Framework adapters let LangChain, LangGraph, LlamaIndex, CrewAI, AutoGen, and custom agents send traffic through the gateway and register metadata.
+
+**TODO items:**
+
+- [ ] LangChain callback/tracing integration
+- [ ] LangGraph metadata and checkpoint integration
+- [ ] LlamaIndex callback integration
+- [ ] CrewAI integration example
+- [ ] AutoGen integration example
+- [ ] OpenAI Agents SDK integration example if useful
+- [ ] Framework compatibility matrix in docs
+- [ ] Example apps for each supported framework
+
+---
+
+### ⬜ CI/CD integrations
+
+**What it means:** Agent definitions, prompts, policies, and evals should fit into normal engineering workflows. Pull requests should validate changes before they reach production.
+
+**TODO items:**
+
+- [ ] GitHub Action to validate agent manifests
+- [ ] GitHub Action to run AgentVoir evals on PR
+- [ ] GitHub Action to publish prompt/agent config
+- [ ] Pre-commit hook for manifest validation
+- [ ] CI check for OPA policy tests
+- [ ] CI check for prompt registry diffs
+- [ ] Example PR workflow for agent promotion
+- [ ] Example release workflow for production agent config
+
+---
+
+### ⬜ Data platform and notification integrations
+
+**What it means:** Enterprises often centralize usage, cost, audit, and operational events in existing tools. AgentVoir should export data cleanly instead of becoming another silo.
+
+**TODO items:**
+
+- [ ] Snowflake usage export
+- [ ] Datadog metrics/export
+- [ ] Splunk audit log export
+- [ ] S3/GCS/Azure Blob artifact export
+- [ ] Slack notifications for budget thresholds
+- [ ] Slack notifications for approval requests
+- [ ] Webhook integration for eval failures and policy denials
+- [ ] CSV/Parquet export for finance and governance teams
+
+---
+
+### ⬜ AgentVoir CLI
+
+**What it means:** A first-class CLI makes AgentVoir scriptable, demoable, and easy to use from developer terminals and CI systems.
+
+**TODO items:**
+
+- [ ] `agentvoir login`
+- [ ] `agentvoir agents list`
+- [ ] `agentvoir agents apply -f agent.yaml`
+- [ ] `agentvoir gateway test`
+- [ ] `agentvoir eval run`
+- [ ] `agentvoir cache inspect`
+- [ ] `agentvoir policy test`
+- [ ] `agentvoir usage summarize`
+- [ ] `agentvoir issues scout` for local AI-suggested GitHub issues
+- [ ] `agentvoir issues code` for local AI coder workflow
+
+---
+
 ## How to use this roadmap
 
 1. **Pick a phase** aligned with your deployment maturity (Phase 1 is the current baseline).
 2. **Work top-to-bottom** within a phase — later items often depend on earlier ones.
-3. **Mark items in progress** in GitHub Issues or Projects; link PRs to specific TODO bullets.
-4. **Update this doc** when items are completed or scope changes.
+3. **Turn large sections into small GitHub issues** with clear scope, acceptance criteria, and suggested files.
+4. **Mark items in progress** in GitHub Issues or Projects; link PRs to specific TODO bullets.
+5. **Use AgentVoir Scout** to suggest candidate issues, label them `ai-suggested`, and manually promote approved work with `ai-code`.
+6. **Update this doc** when items are completed or scope changes.
+
+Recommended GitHub issue fields when converting a roadmap item:
+
+- **Goal**
+- **Scope**
+- **Acceptance criteria**
+- **Suggested files/modules**
+- **Constraints**
+- **Priority**
+- **Labels**
 
 For questions about what a technology does in AgentVoir, see [Tech Stack Usage](architecture/tech-stack-usage.md). For local setup, see [Docker Install Guide](../deployments/docker/INSTALL.md).

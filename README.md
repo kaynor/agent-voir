@@ -564,7 +564,16 @@ x-trace-id: trace-id
 
 ## Development roadmap
 
-See **[docs/development-roadmap.md](docs/development-roadmap.md)** for a detailed breakdown of each item below, with plain-language explanations and concrete TODO tasks.
+See **[docs/development-roadmap.md](docs/development-roadmap.md)** for plain-language explanations and concrete TODO tasks for each item below.
+
+Status: ✅ done · 🟡 partial · ⬜ not started · 🔒 blocked
+
+### Phase 0: Developer experience and project trust
+
+- ⬜ Quickstart smoke test
+- ⬜ Public demo scenario
+- ⬜ Contribution-ready issue backlog
+- ⬜ API documentation portal
 
 ### Phase 1: Registry and exact cache
 
@@ -576,34 +585,50 @@ See **[docs/development-roadmap.md](docs/development-roadmap.md)** for a detaile
 - ✅ Usage event ingestion
 - ✅ Docker Compose environment
 - ✅ Python and TypeScript SDK skeletons
+- ⬜ Release security and software supply chain
 
 ### Phase 2: Enterprise controls
 
-- OIDC authentication
-- RBAC and service accounts
-- Per-agent budgets
-- Per-agent and per-tenant rate limits
-- Audit logging
-- Provider routing and fallback
-- Dependency graph API
-- OpenTelemetry traces and Prometheus metrics
+- ⬜ OIDC authentication
+- ⬜ RBAC and service accounts
+- 🟡 Per-agent budgets
+- ⬜ Per-agent and per-tenant rate limits
+- ⬜ Audit logging
+- ⬜ Policy-as-code engine
+- 🟡 Provider routing and fallback
+- ⬜ Provider adapter conformance suite
+- 🟡 Dependency graph API
+- ⬜ Tool and MCP server registry
+- 🟡 OpenTelemetry traces and Prometheus metrics
+- ⬜ Pre-flight token and cost estimation
+- ⬜ Human-in-the-loop approval gates
+- ⬜ Prompt injection and tool-call security
+- ⬜ Admin web console
 
 ### Phase 3: Semantic cache and evals
 
-- RedisVL/Qdrant semantic cache
-- Cache shadow mode
-- Prompt registry
-- Eval datasets and regression runner
-- Agent scorecards
-- PII/secret detection hooks
+- ⬜ Cache correctness and safety framework
+- ⬜ RedisVL / Qdrant semantic cache
+- ⬜ Cache shadow mode
+- 🟡 Prompt registry
+- ⬜ Eval datasets and regression runner
+- ⬜ Agent scorecards
+- ⬜ PII / secret detection hooks
 
 ### Phase 4: Kubernetes-native control plane
 
-- Helm chart
-- Kubernetes CRDs: `Agent`, `Prompt`, `ModelRoute`, `AgentPolicy`
-- Admission controller
-- GitOps examples
-- Multi-region routing examples
+- 🟡 Helm chart
+- 🟡 Kubernetes CRDs: `Agent`, `Prompt`, `ModelRoute`, `AgentPolicy`
+- ⬜ Admission controller
+- ⬜ GitOps examples
+- ⬜ Multi-region routing examples
+
+### Phase 5: Ecosystem and integrations
+
+- ⬜ Framework integrations
+- ⬜ CI/CD integrations
+- ⬜ Data platform and notification integrations
+- ⬜ AgentVoir CLI
 
 ---
 
