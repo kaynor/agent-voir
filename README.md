@@ -1,5 +1,5 @@
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-![Stars](https://img.shields.io/github/stars/kaynor/agent-voir)
+![Stars](https://badgen.net/github/stars/kaynor/agent-voir)
 ![Issues](https://img.shields.io/github/issues/kaynor/agent-voir)
 ![Last Commit](https://img.shields.io/github/last-commit/kaynor/agent-voir)
 
@@ -9,7 +9,7 @@
 
 ---
 
-## A project of the Agents, by the Agents and for the Agents !!
+### A project of the Agents, by the Agents and for the Agents !!
 
 ---
 
@@ -19,9 +19,8 @@ It helps enterprises **register agents**, **govern model/tool access**, **track 
 
 > Status: early scaffold. This repository is structured for an enterprise-grade implementation, but many modules are intentionally placeholders until the first implementation milestone lands.
 
-AgentVoir tech architecture
+![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
 
----
 
 ## Why AgentVoir?
 
