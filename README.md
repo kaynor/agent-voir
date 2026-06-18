@@ -8,7 +8,7 @@
 
 ---
 
-** This project uses Agent Bots to design and code features for this project.
+**[Kailash Aynor] This project uses Agent Bots to design and code features for this project.
 
 
 
