@@ -16,6 +16,10 @@ It helps enterprises **register agents**, **govern model/tool access**, **track 
 
 > Status: early scaffold. This repository is structured for an enterprise-grade implementation, but many modules are intentionally placeholders until the first implementation milestone lands.
 
+## Architecture
+
+![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
+
 ---
 
 ## Why AgentVoir?
