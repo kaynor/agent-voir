@@ -550,6 +550,8 @@ x-trace-id: trace-id
 
 ## Development roadmap
 
+See **[docs/development-roadmap.md](docs/development-roadmap.md)** for a detailed breakdown of each item below, with plain-language explanations and concrete TODO tasks.
+
 ### Phase 1: Registry and exact cache
 
 - ✅ Agent registration API
