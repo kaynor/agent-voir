@@ -25,3 +25,5 @@ Analytics    <-> ClickHouse
 Policy       <-> OPA
 Telemetry    <-> OpenTelemetry / Prometheus / Grafana
 ```
+
+See [Tech Stack Usage](tech-stack-usage.md) for details on ClickHouse, OPA, Prometheus, and Grafana.
