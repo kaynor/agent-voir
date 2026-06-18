@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentvoir-registry-api
+spec:
+  replicas: {{ .Values.registryApi.replicas }}
+  selector:
+    matchLabels:
+      app: agentvoir-registry-api
+  template:
+    metadata:
+      labels:
+        app: agentvoir-registry-api
+    spec:
+      containers:
+        - name: registry-api
+          image: {{ .Values.image.registryApi }}
+          ports:
+            - containerPort: {{ .Values.registryApi.port }}

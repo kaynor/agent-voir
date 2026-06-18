@@ -1,0 +1,19 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: Prompt
+metadata:
+  name: support-ticket-summary
+  version: 0.1.0
+spec:
+  ownerTeam: support-platform
+  riskLevel: medium
+  variables:
+    - ticket_body
+  approvedModels:
+    - gpt-4.1-mini
+    - claude-sonnet
+  template: |
+    You are a support operations assistant.
+    Summarize the ticket below using concise bullet points.
+
+    Ticket:
+    {{ ticket_body }}

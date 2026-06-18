@@ -1,0 +1,22 @@
+openapi: 3.1.0
+info:
+  title: AgentVoir API
+  version: 0.1.0
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /v1/agents:
+    get:
+      summary: List agents
+      responses:
+        '200':
+          description: Agent list
+    post:
+      summary: Register an agent
+      responses:
+        '201':
+          description: Created

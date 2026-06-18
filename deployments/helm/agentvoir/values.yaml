@@ -1,0 +1,23 @@
+image:
+  registryApi: ghcr.io/agentvoir/registry-api:latest
+  gateway: ghcr.io/agentvoir/gateway:latest
+
+registryApi:
+  replicas: 1
+  port: 8081
+
+gateway:
+  replicas: 1
+  port: 8080
+
+postgres:
+  externalDsn: ""
+
+redis:
+  externalAddr: ""
+
+opa:
+  url: "http://agentvoir-opa:8181"
+
+otel:
+  endpoint: "http://agentvoir-otel-collector:4318"

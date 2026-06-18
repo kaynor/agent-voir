@@ -1,0 +1,43 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: Agent
+metadata:
+  name: customer-support-agent
+  version: 0.1.0
+spec:
+  ownerTeam: support-platform
+  costCenter: support-ai
+  environment: staging
+  framework: langgraph
+  riskLevel: medium
+  dataClasses:
+    - customer_pii
+  lifecycle: draft
+  models:
+    primary:
+      provider: openai
+      model: gpt-4.1-mini
+    fallback:
+      provider: anthropic
+      model: claude-sonnet
+  cache:
+    mode: exact_only
+    ttlSeconds: 86400
+    semanticCacheAllowed: false
+  budget:
+    monthlyUsd: 1000
+    maxPromptTokensPerRequest: 12000
+    maxCompletionTokensPerRequest: 2000
+  dependencies:
+    tools:
+      - zendesk
+      - salesforce
+    vectorStores:
+      - support-kb-qdrant
+    agents:
+      - policy-lookup-agent
+  policies:
+    piiAllowed: true
+    requireAuditLog: true
+    allowedProviders:
+      - openai
+      - anthropic

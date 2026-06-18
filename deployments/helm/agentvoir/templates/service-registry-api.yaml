@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentvoir-registry-api
+spec:
+  selector:
+    app: agentvoir-registry-api
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  go:
+    name: Go tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Test gateway
+        run: cd apps/gateway && go test ./...
+      - name: Test registry API
+        run: cd apps/registry-api && go test ./...
+      - name: Test Go SDK
+        run: cd packages/sdk-go && go test ./...
+
+  node:
+    name: Node checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Web install
+        run: cd apps/web && npm install
+      - name: Web lint
+        run: cd apps/web && npm run lint
+      - name: TypeScript SDK install
+        run: cd packages/sdk-typescript && npm install
+      - name: TypeScript SDK test
+        run: cd packages/sdk-typescript && npm test
+
+  python:
+    name: Python checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install SDK
+        run: cd packages/sdk-python && pip install -e '.[dev]'
+      - name: Lint SDK
+        run: cd packages/sdk-python && ruff check .
+      - name: Test SDK
+        run: cd packages/sdk-python && pytest

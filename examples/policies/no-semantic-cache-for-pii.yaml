@@ -1,0 +1,12 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: AgentPolicy
+metadata:
+  name: no-semantic-cache-for-pii
+spec:
+  description: Disable semantic caching when an agent can process PII.
+  match:
+    dataClasses:
+      - customer_pii
+  enforce:
+    cache:
+      semanticCacheAllowed: false

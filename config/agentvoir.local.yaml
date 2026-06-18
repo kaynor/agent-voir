@@ -1,0 +1,17 @@
+environment: local
+registryApi:
+  address: ":8081"
+  databaseDsn: "postgres://agentvoir:agentvoir@localhost:5432/agentvoir?sslmode=disable"
+gateway:
+  address: ":8080"
+  registryApiUrl: "http://localhost:8081"
+  defaultCacheMode: "exact_only"
+  cacheDefaultTtlSeconds: 86400
+cache:
+  redisAddr: "localhost:6379"
+policy:
+  opaUrl: "http://localhost:8181"
+analytics:
+  clickhouseDsn: "http://localhost:8123"
+observability:
+  otlpEndpoint: "http://localhost:4318"

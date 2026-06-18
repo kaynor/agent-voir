@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS cache_entries;
+DROP TABLE IF EXISTS budgets;
+DROP TABLE IF EXISTS model_routes;
+DROP TABLE IF EXISTS prompts;
+DROP TABLE IF EXISTS agent_dependencies;
+DROP TABLE IF EXISTS agents;

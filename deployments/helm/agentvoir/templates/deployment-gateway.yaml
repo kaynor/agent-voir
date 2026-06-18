@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentvoir-gateway
+spec:
+  replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      app: agentvoir-gateway
+  template:
+    metadata:
+      labels:
+        app: agentvoir-gateway
+    spec:
+      containers:
+        - name: gateway
+          image: {{ .Values.image.gateway }}
+          ports:
+            - containerPort: {{ .Values.gateway.port }}

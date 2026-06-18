@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+make fmt
+make lint
+make test
