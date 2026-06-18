@@ -44,6 +44,8 @@ class Settings(BaseSettings):
 
     test_command: str = Field(default="make test", validation_alias="TEST_COMMAND")
     git_push_remote: str = Field(default="origin", validation_alias="GIT_PUSH_REMOTE")
+    git_user_name: str | None = Field(default=None, validation_alias="GIT_USER_NAME")
+    git_user_email: str | None = Field(default=None, validation_alias="GIT_USER_EMAIL")
 
     @field_validator("repo_path", mode="before")
     @classmethod
