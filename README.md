@@ -129,7 +129,7 @@ agentvoir/
 
 ---
 
-## Suggested tech stack
+## Tech stack
 
 
 | Layer          | Stack                                   |
