@@ -1,41 +1,37 @@
 # Policy denial demo scenario
 
-This example shows how AgentVoir **would** deny a request when OPA policy integration is fully wired (Phase 2). Today the OPA container runs with example Rego policies; the gateway does not yet call OPA on every request.
+This demo shows AgentVoir denying a gateway request when OPA policy rules are not satisfied.
 
 ## Scenario
 
-An agent in **draft** lifecycle tries to call a provider that is not approved for production traffic.
+A **draft** agent sends a request with `x-agent-environment: production`. OPA denies the call before any model provider is contacted.
 
-## Setup
+## Automated demo
 
-Agent manifest: `examples/agents/customer-support-agent.yaml` (lifecycle: `draft`)
-
-OPA policy: `policies/opa/agentvoir.rego` — production agents must use allowed providers.
-
-## Simulated policy input
-
-```json
-{
-  "agent": {
-    "lifecycle": "draft",
-    "policies": {
-      "allowedProviders": ["openai", "anthropic"],
-      "piiAllowed": true
-    },
-    "cache": { "mode": "exact_only", "semanticCacheAllowed": false }
-  },
-  "request": {
-    "provider": "openai",
-    "contains_pii": false,
-    "contains_secret": false
-  },
-  "environment": "production"
-}
+```bash
+./scripts/onebox.sh
+./scripts/seed-demo.sh          # register customer-support-agent if needed
+./scripts/demo-policy-denial.sh # expect HTTP 403
 ```
 
-## Expected OPA result (today)
+## Manual curl
 
-Query `allow` against the policy server:
+```bash
+curl -sD - -o /tmp/out.json \
+  -X POST http://localhost:8080/v1/chat/completions \
+  -H "Authorization: Bearer agentvoir-onebox-key" \
+  -H "Content-Type: application/json" \
+  -H "x-agent-id: customer-support-agent" \
+  -H "x-agent-version: 0.1.0" \
+  -H "x-agent-environment: production" \
+  --data-binary @examples/demo/sample-chat-request.json
+```
+
+## OPA policy
+
+Rego rules live in `policies/opa/agentvoir.rego`. Draft agents are allowed in `dev` and `staging` environments; production environment requires production lifecycle.
+
+## Direct OPA query
 
 ```bash
 curl -s http://localhost:8181/v1/data/agentvoir/authz/allow \
@@ -43,11 +39,7 @@ curl -s http://localhost:8181/v1/data/agentvoir/authz/allow \
   -d @examples/demo/policy-denial-input.json
 ```
 
-For a **draft** agent in **production** environment, `allow` is **false** unless lifecycle is `staging` and environment matches.
-
 ## Related examples
 
+- Agent manifest: `examples/agents/customer-support-agent.yaml`
 - Agent policy manifest: `examples/policies/no-semantic-cache-for-pii.yaml`
-- Prompt: `examples/prompts/support-ticket-summary.yaml`
-
-When gateway ↔ OPA integration lands (Phase 2), denied requests will return HTTP 403 with a structured error before the upstream model is called.

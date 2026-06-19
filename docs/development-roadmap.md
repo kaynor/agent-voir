@@ -278,6 +278,19 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 
 **Goal:** Make AgentVoir safe and manageable for real enterprise deployments — proper login, permissions, spending limits, audit trails, and operational visibility.
 
+### GitHub showcase track (in progress)
+
+High-impact items for visitors evaluating AgentVoir on GitHub:
+
+- [x] Admin web console MVP (dashboard, agent list, agent detail)
+- [x] Gateway OPA policy check before upstream calls
+- [x] Gateway monthly budget enforcement (429)
+- [x] Demo scripts: `demo-policy-denial.sh`, `demo-budget-block.sh`
+- [x] Persist agent policies from YAML manifest
+- [x] Grafana overview dashboard panels (cache, policy, budget metrics)
+- [ ] README screenshots / GIF of admin console
+- [ ] Publish GitHub Release with showcase features
+
 ---
 
 ### ⬜ OIDC authentication
@@ -325,10 +338,10 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Implement `GET/PUT /v1/agents/{agentID}/budget` registry endpoints
 - [x] Persist budgets in PostgreSQL
 - [x] Accept budget fields from agent YAML manifest
-- [ ] Gateway loads budget for agent on each request
+- [x] Gateway loads budget for agent on each request
 - [ ] Enforce max tokens per request before calling provider
-- [ ] Track cumulative spend per agent per month (from ClickHouse rollups)
-- [ ] Return `429` or structured error when monthly budget exceeded
+- [x] Track cumulative spend per agent per month (from ClickHouse rollups)
+- [x] Return `429` or structured error when monthly budget exceeded
 - [ ] Add budget utilization API (`GET /v1/agents/{agentID}/budget/status`)
 - [ ] Optional: soft limits (warn) vs hard limits (block)
 - [ ] Notify owners when budget reaches 80% / 100% thresholds
@@ -378,12 +391,12 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 
 - [ ] Define standard OPA input schema for gateway requests
 - [ ] Define standard OPA input schema for registry mutations
-- [ ] Add default policy: deny semantic cache when PII is present
+- [x] Add default policy: deny semantic cache when PII is present
 - [ ] Add default policy: deny production agents without owner/team
-- [ ] Add default policy: deny unapproved model providers
+- [x] Add default policy: deny unapproved model providers
 - [ ] Add default policy: deny high-risk agents without audit logging
 - [ ] Add default policy: deny tool access outside approved dependency list
-- [ ] Implement gateway policy check before provider call
+- [x] Implement gateway policy check before provider call
 - [ ] Implement registry policy check before lifecycle promotion
 - [ ] Add policy decision logs to audit events
 - [ ] Add policy test fixtures using `opa test`
@@ -549,18 +562,18 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 
 ---
 
-### ⬜ Admin web console
+### 🟡 Admin web console
 
 **What it means:** A browser UI makes AgentVoir easier to demo and operate. Platform teams should be able to inspect agents, dependencies, cost, cache behavior, policies, eval results, and approvals without querying raw APIs.
 
 **TODO items:**
 
-- [ ] Agent list and detail pages
+- [x] Agent list and detail pages
 - [ ] Agent registration form
 - [ ] Manifest upload and validation UI
 - [ ] Dependency graph visualization
-- [ ] Cost and token usage dashboard
-- [ ] Cache hit/miss dashboard
+- [x] Cost and token usage dashboard
+- [x] Cache hit/miss dashboard
 - [ ] Policy decision viewer
 - [ ] Audit event explorer
 - [ ] Prompt version viewer and diff page

@@ -17,7 +17,7 @@
 
 It helps enterprises **register agents**, **govern model/tool access**, **track token usage and cost**, **map dependencies**, **enforce policy-as-code**, and **cache repeated LLM requests** through an OpenAI-compatible proxy.
 
-> Status: early scaffold. This repository is structured for an enterprise-grade implementation, but many modules are intentionally placeholders until the first implementation milestone lands.
+> Status: Phase 1 complete; Phase 2 showcase (admin console, OPA policy, budget enforcement) landing now.
 
 ![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
 
@@ -114,10 +114,10 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 
 - ⬜ OIDC authentication
 - ⬜ RBAC and service accounts
-- 🟡 Per-agent budgets
+- 🟡 Per-agent budgets *(gateway enforcement live)*
 - ⬜ Per-agent and per-tenant rate limits
 - ⬜ Audit logging
-- ⬜ Policy-as-code engine
+- 🟡 Policy-as-code engine *(gateway OPA check live)*
 - 🟡 Provider routing and fallback
 - ⬜ Provider adapter conformance suite
 - 🟡 Dependency graph API
@@ -126,7 +126,7 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ Pre-flight token and cost estimation
 - ⬜ Human-in-the-loop approval gates
 - ⬜ Prompt injection and tool-call security
-- ⬜ Admin web console
+- 🟡 Admin web console *(MVP dashboard + agent detail)*
 
 ### Phase 3: Semantic cache and evals
 
@@ -258,7 +258,7 @@ Example quickstart output:
 
 ```text
 ==> Registering demo agent from manifest
-    Registered customer-support-agent (201 Created)
+    Registered cache-demo-agent (201 Created)
 ==> Gateway chat completion — first request (expect cache miss)
     x-cache-status: miss
 ==> Gateway chat completion — second request (expect cache hit)
@@ -266,7 +266,30 @@ Example quickstart output:
     Cache behavior: OK (miss → hit)
 ```
 
+Governance demos use `customer-support-agent` (PII + OPA). Quickstart uses `cache-demo-agent` for reliable exact-cache miss → hit.
+
 Walkthrough: [docs/demo/README.md](docs/demo/README.md) · API docs: [docs/api/README.md](docs/api/README.md)
+
+### Showcase demos (governance)
+
+After onebox is running (`make onebox-up-build` for contributors with latest code):
+
+```bash
+./scripts/demo-policy-denial.sh   # OPA denies draft agent in production (HTTP 403)
+./scripts/demo-budget-block.sh    # Monthly budget exceeded (HTTP 429)
+make showcase                     # quickstart + both governance demos
+```
+
+### Admin web console
+
+Browse agents, budgets, dependencies, and usage from the browser:
+
+```bash
+make onebox-up-build              # or onebox-up with a release that includes these features
+make run-web                      # http://localhost:3000
+```
+
+Set `REGISTRY_API_URL` and `TOKEN_ACCOUNTING_URL` if your stack uses custom ports.
 
 **Quick try troubleshooting**
 

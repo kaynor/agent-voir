@@ -13,8 +13,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$ROOT/deployments/docker/.env.onebox"
 COMPOSE_FILE="$ROOT/deployments/docker/docker-compose.onebox.yml"
-MANIFEST="$ROOT/examples/agents/customer-support-agent.yaml"
-CHAT_BODY="$ROOT/examples/demo/sample-chat-request.json"
+MANIFEST="$ROOT/examples/agents/cache-demo-agent.yaml"
+CHAT_BODY="$ROOT/examples/demo/quickstart-chat-request.json"
 
 START_STACK=1
 if [[ "${1:-}" == "--no-start" ]]; then
@@ -31,7 +31,9 @@ GATEWAY_PORT="${AGENTVOIR_GATEWAY_PORT:-8080}"
 REGISTRY_PORT="${AGENTVOIR_REGISTRY_PORT:-8081}"
 USAGE_PORT="${AGENTVOIR_USAGE_PORT:-8082}"
 API_KEY="${GATEWAY_API_KEY:-agentvoir-onebox-key}"
-AGENT_ID="customer-support-agent"
+AGENT_ID="cache-demo-agent"
+AGENT_VERSION="0.1.0"
+AGENT_ENV="staging"
 
 banner() {
   echo ""
@@ -91,6 +93,8 @@ curl -sS -D /tmp/agentvoir-headers-1.txt -o /tmp/agentvoir-chat-1.json \
   -H "Authorization: Bearer ${API_KEY}" \
   -H "Content-Type: application/json" \
   -H "x-agent-id: ${AGENT_ID}" \
+  -H "x-agent-version: ${AGENT_VERSION}" \
+  -H "x-agent-environment: ${AGENT_ENV}" \
   -H "x-tenant-id: acme" \
   -H "x-user-id: quickstart-demo" \
   --data-binary "@${CHAT_BODY}"
@@ -105,6 +109,8 @@ curl -sS -D /tmp/agentvoir-headers-2.txt -o /tmp/agentvoir-chat-2.json \
   -H "Authorization: Bearer ${API_KEY}" \
   -H "Content-Type: application/json" \
   -H "x-agent-id: ${AGENT_ID}" \
+  -H "x-agent-version: ${AGENT_VERSION}" \
+  -H "x-agent-environment: ${AGENT_ENV}" \
   -H "x-tenant-id: acme" \
   -H "x-user-id: quickstart-demo" \
   --data-binary "@${CHAT_BODY}"
@@ -117,6 +123,9 @@ if [[ "$cache1" == "miss" && "$cache2" == "hit" ]]; then
   echo "    Cache behavior: OK (miss → hit)"
 elif [[ "$cache1" == "hit" && "$cache2" == "hit" ]]; then
   echo "    Cache behavior: prior run left cache warm (hit → hit)"
+elif [[ "$cache1" == "bypass" || "$cache2" == "bypass" ]]; then
+  echo "    Cache behavior: unexpected bypass — use cache-demo-agent (no PII data classes)" >&2
+  exit 1
 else
   echo "    Cache behavior: first=${cache1:-?} second=${cache2:-?} (check CACHE_MODE in onebox)"
 fi

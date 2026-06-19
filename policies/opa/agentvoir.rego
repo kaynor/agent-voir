@@ -9,6 +9,11 @@ default cache_allowed := false
 default semantic_cache_allowed := false
 
 allow if {
+  input.agent.lifecycle == "draft"
+  input.environment in {"dev", "staging"}
+}
+
+allow if {
   input.agent.lifecycle == "production"
   input.request.provider in input.agent.policies.allowedProviders
 }

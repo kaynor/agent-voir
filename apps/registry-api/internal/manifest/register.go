@@ -41,6 +41,11 @@ func Register(stores Stores, doc *Document) (RegistrationResult, error) {
 		CacheMode:            doc.Spec.Cache.Mode,
 		CacheTTLSeconds:      doc.Spec.Cache.TTLSeconds,
 		SemanticCacheAllowed: doc.Spec.Cache.SemanticCacheAllowed,
+		Policies: agents.AgentPolicies{
+			AllowedProviders: append([]string(nil), doc.Spec.Policies.AllowedProviders...),
+			PIIAllowed:       doc.Spec.Policies.PIIAllowed,
+			RequireAuditLog:  doc.Spec.Policies.RequireAuditLog,
+		},
 		DataClasses:          doc.Spec.DataClasses,
 	}
 

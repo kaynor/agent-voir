@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/accounting"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/budget"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/cache"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/gateway"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/metrics"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/middleware"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
 	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
@@ -33,9 +36,26 @@ func main() {
 	if config.OpenAIAPIKey != "" {
 		openaiProvider = providers.NewOpenAIProvider(config.OpenAIAPIKey, config.OpenAIBaseURL)
 	}
-	registry := providers.NewRegistry(openaiProvider, providers.NewMockProvider())
+	providerRegistry := providers.NewRegistry(openaiProvider, providers.NewMockProvider())
 	agentRegistry := agentregistry.NewClient(config.RegistryAPIURL)
-	handler := gateway.NewHandler(config, cacheStore, registry, agentRegistry, usage.NewRecorder(config.TokenAccountingURL))
+	accountingClient := accounting.NewClient(config.TokenAccountingURL)
+	budgetChecker := budget.NewChecker(&budget.RegistryAdapter{Client: agentRegistry}, accounting.NewSpendAdapter(accountingClient))
+
+	var policyEvaluator policy.Evaluator = policy.NopEvaluator{}
+	if config.OPAURL != "" {
+		policyEvaluator = policy.NewOPAClient(config.OPAURL)
+		log.Printf("AgentVoir gateway enforcing OPA policies at %s", config.OPAURL)
+	}
+
+	handler := gateway.NewHandler(
+		config,
+		cacheStore,
+		providerRegistry,
+		agentRegistry,
+		budgetChecker,
+		policyEvaluator,
+		usage.NewRecorder(config.TokenAccountingURL),
+	)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthz)
@@ -49,6 +69,9 @@ func main() {
 	}
 
 	log.Printf("AgentVoir gateway listening on %s (cache_mode=%s)", config.Addr, config.CacheMode)
+	if config.RegistryAPIURL != "" {
+		log.Printf("AgentVoir gateway loading agent config from %s", config.RegistryAPIURL)
+	}
 	if config.TokenAccountingURL != "" {
 		log.Printf("AgentVoir gateway emitting usage events to %s", config.TokenAccountingURL)
 	}

@@ -1,0 +1,29 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: Agent
+metadata:
+  name: cache-demo-agent
+  version: 0.1.0
+spec:
+  ownerTeam: platform
+  costCenter: platform-ai
+  environment: staging
+  framework: custom
+  riskLevel: low
+  lifecycle: draft
+  dataClasses: []
+  models:
+    primary:
+      provider: openai
+      model: gpt-4.1-mini
+  cache:
+    mode: exact_only
+    ttlSeconds: 86400
+    semanticCacheAllowed: false
+  budget:
+    monthlyUsd: 100
+  policies:
+    piiAllowed: false
+    requireAuditLog: false
+    allowedProviders:
+      - openai
+      - mock

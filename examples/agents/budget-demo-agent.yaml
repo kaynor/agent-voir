@@ -1,0 +1,24 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: Agent
+metadata:
+  name: budget-demo-agent
+  version: 0.1.0
+spec:
+  ownerTeam: platform
+  environment: staging
+  riskLevel: low
+  lifecycle: draft
+  models:
+    primary:
+      provider: openai
+      model: gpt-4.1-mini
+  cache:
+    mode: off
+  budget:
+    monthlyUsd: 0.001
+    maxPromptTokensPerRequest: 12000
+  policies:
+    piiAllowed: false
+    requireAuditLog: true
+    allowedProviders:
+      - openai

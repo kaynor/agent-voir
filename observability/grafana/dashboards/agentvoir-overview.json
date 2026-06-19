@@ -1,6 +1,46 @@
 {
-  "title": "AgentVoir Overview",
-  "panels": [],
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" } },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "agentvoir_cache_hits_total / (agentvoir_cache_hits_total + agentvoir_cache_misses_total + 1e-9)",
+          "legendFormat": "cache hit rate"
+        }
+      ],
+      "title": "Gateway cache hit rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "targets": [
+        { "expr": "rate(agentvoir_policy_denied_total[5m])", "legendFormat": "policy denials/s" }
+      ],
+      "title": "Policy denials",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "targets": [
+        { "expr": "rate(agentvoir_budget_exceeded_total[5m])", "legendFormat": "budget blocks/s" }
+      ],
+      "title": "Budget blocks",
+      "type": "timeseries"
+    }
+  ],
   "schemaVersion": 39,
+  "title": "AgentVoir Overview",
+  "uid": "agentvoir-overview",
   "version": 1
 }

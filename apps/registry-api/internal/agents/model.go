@@ -4,22 +4,23 @@ import "time"
 
 // Agent is the persisted registry record for an enterprise agent.
 type Agent struct {
-	ID          string    `json:"id"`
-	AgentID     string    `json:"agent_id"`
-	Name        string    `json:"name"`
-	Version     string    `json:"version"`
-	OwnerTeam   string    `json:"owner_team"`
-	CostCenter  string    `json:"cost_center,omitempty"`
-	Environment string    `json:"environment"`
-	Framework   string    `json:"framework,omitempty"`
-	RiskLevel   string    `json:"risk_level"`
-	Lifecycle            string    `json:"lifecycle"`
-	CacheMode            string    `json:"cache_mode,omitempty"`
-	CacheTTLSeconds      int64     `json:"cache_ttl_seconds,omitempty"`
-	SemanticCacheAllowed bool      `json:"semantic_cache_allowed"`
-	DataClasses          []string  `json:"data_classes"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID                   string        `json:"id"`
+	AgentID              string        `json:"agent_id"`
+	Name                 string        `json:"name"`
+	Version              string        `json:"version"`
+	OwnerTeam            string        `json:"owner_team"`
+	CostCenter           string        `json:"cost_center,omitempty"`
+	Environment          string        `json:"environment"`
+	Framework            string        `json:"framework,omitempty"`
+	RiskLevel            string        `json:"risk_level"`
+	Lifecycle            string        `json:"lifecycle"`
+	CacheMode            string        `json:"cache_mode,omitempty"`
+	CacheTTLSeconds      int64         `json:"cache_ttl_seconds,omitempty"`
+	SemanticCacheAllowed bool          `json:"semantic_cache_allowed"`
+	Policies             AgentPolicies `json:"policies"`
+	DataClasses          []string      `json:"data_classes"`
+	CreatedAt            time.Time     `json:"created_at"`
+	UpdatedAt            time.Time     `json:"updated_at"`
 }
 
 // RegisterRequest is the JSON body for POST /v1/agents.
@@ -35,8 +36,9 @@ type RegisterRequest struct {
 	Lifecycle            string   `json:"lifecycle"`
 	CacheMode            string   `json:"cache_mode"`
 	CacheTTLSeconds      int64    `json:"cache_ttl_seconds"`
-	SemanticCacheAllowed bool     `json:"semantic_cache_allowed"`
-	DataClasses          []string `json:"data_classes"`
+	SemanticCacheAllowed bool          `json:"semantic_cache_allowed"`
+	Policies             AgentPolicies `json:"policies"`
+	DataClasses          []string      `json:"data_classes"`
 }
 
 // ApplyDefaults fills in registry defaults for optional fields.
@@ -58,6 +60,9 @@ func (r *RegisterRequest) ApplyDefaults() {
 	}
 	if r.DataClasses == nil {
 		r.DataClasses = []string{}
+	}
+	if r.Policies.AllowedProviders == nil {
+		r.Policies.AllowedProviders = []string{}
 	}
 }
 
@@ -87,6 +92,7 @@ type UpdateRequest struct {
 	Lifecycle            string   `json:"lifecycle"`
 	CacheMode            string   `json:"cache_mode"`
 	CacheTTLSeconds      int64    `json:"cache_ttl_seconds"`
-	SemanticCacheAllowed *bool    `json:"semantic_cache_allowed"`
-	DataClasses          []string `json:"data_classes"`
+	SemanticCacheAllowed *bool         `json:"semantic_cache_allowed"`
+	Policies             *AgentPolicies `json:"policies"`
+	DataClasses          []string      `json:"data_classes"`
 }

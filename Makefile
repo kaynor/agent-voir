@@ -15,6 +15,10 @@ help:
 	@echo "  make onebox-reset         Stop onebox stack and delete onebox volumes"
 	@echo "  make onebox-smoke         Run health checks against onebox stack"
 	@echo "  make quickstart           End-to-end demo (onebox + agent + cache + usage)"
+	@echo "  make demo-policy          OPA policy denial demo (HTTP 403)"
+	@echo "  make demo-budget          Budget enforcement demo (HTTP 429)"
+	@echo "  make showcase             quickstart + governance demos"
+	@echo "  make run-web              Admin console at http://localhost:3000"
 	@echo "  make dev-docs             Start local Swagger UI for API specs (:8089)"
 	@echo "  make dev-up               Start local infrastructure (Postgres, Redis, ClickHouse, ...)"
 	@echo "  make dev-up-all           Start infrastructure + AgentVoir apps in Docker"
@@ -78,6 +82,20 @@ quickstart:
 	@chmod +x scripts/quickstart.sh
 	@./scripts/quickstart.sh
 
+demo-policy:
+	@chmod +x scripts/demo-policy-denial.sh
+	@./scripts/demo-policy-denial.sh
+
+demo-budget:
+	@chmod +x scripts/demo-budget-block.sh
+	@./scripts/demo-budget-block.sh
+
+showcase:
+	@chmod +x scripts/quickstart.sh scripts/demo-policy-denial.sh scripts/demo-budget-block.sh
+	@./scripts/quickstart.sh --no-start || ./scripts/quickstart.sh
+	@./scripts/demo-policy-denial.sh
+	@./scripts/demo-budget-block.sh
+
 	db-migrate:
 	cd apps/registry-api && go run ./cmd/migrate
 
@@ -103,7 +121,7 @@ run-token-accounting:
 	cd services/token-accounting && go run ./cmd/token-accounting
 
 run-web:
-	cd apps/web && npm install && npm run dev
+	cd apps/web && npm install && REGISTRY_API_URL=http://localhost:8081 TOKEN_ACCOUNTING_URL=http://localhost:8082 npm run dev
 
 fmt:
 	gofmt -w apps/gateway apps/registry-api services/token-accounting packages/sdk-go || true

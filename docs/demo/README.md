@@ -16,6 +16,8 @@ This walkthrough uses the **customer support agent** scenario — a realistic en
 
 ## One-command quickstart
 
+Uses **`cache-demo-agent`** — no PII data classes, so exact cache miss → hit works reliably. Governance demos still use `customer-support-agent` (see below).
+
 ```bash
 cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 chmod +x scripts/quickstart.sh
@@ -25,10 +27,8 @@ chmod +x scripts/quickstart.sh
 Expected output (abbreviated):
 
 ```text
-==> Starting AgentVoir onebox
-...
 ==> Registering demo agent from manifest
-    Registered customer-support-agent (201 Created)
+    Registered cache-demo-agent (201 Created)
 
 ==> Gateway chat completion — first request (expect cache miss)
     x-cache-status: miss
@@ -36,12 +36,6 @@ Expected output (abbreviated):
 ==> Gateway chat completion — second request (expect cache hit)
     x-cache-status: hit
     Cache behavior: OK (miss → hit)
-
-==> Recent usage events for customer-support-agent
-[
-  { "agent_id": "customer-support-agent", "cache_status": "hit", ... },
-  { "agent_id": "customer-support-agent", "cache_status": "miss", ... }
-]
 ```
 
 If onebox is already running:
@@ -98,19 +92,46 @@ Sample response shape: [examples/demo/sample-chat-response.json](../../examples/
 curl "http://localhost:8082/v1/usage-events?agent_id=customer-support-agent&limit=5" | python3 -m json.tool
 ```
 
-### 5. Policy denial scenario (preview)
+### 5. Policy denial demo (live)
 
-See [examples/demo/policy-denial-scenario.md](../../examples/demo/policy-denial-scenario.md) for how OPA policies will gate requests in Phase 2.
+```bash
+./scripts/demo-policy-denial.sh
+```
+
+Sends a gateway request with `x-agent-environment: production` for a **draft** agent. OPA denies it before the model is called (HTTP 403).
+
+### 6. Budget block demo (live)
+
+```bash
+./scripts/demo-budget-block.sh
+```
+
+Registers `budget-demo-agent` with a $0.001 monthly cap, simulates spend via usage ingestion, then shows the gateway blocking the next request (HTTP 429).
+
+### 7. Admin console
+
+```bash
+make run-web   # http://localhost:3000
+```
+
+Dashboard shows agent count, monthly spend, cache hit rate, and agent detail pages with budgets, policies, and dependencies.
+
+### 8. Policy denial scenario (reference)
+
+See [examples/demo/policy-denial-scenario.md](../../examples/demo/policy-denial-scenario.md) for the OPA input shape. The gateway now calls OPA on every upstream request when `OPA_URL` is set.
 
 ## Related files
 
 | File | Purpose |
 | ---- | ------- |
-| `examples/agents/customer-support-agent.yaml` | Agent manifest (cache, budget, deps) |
+| `examples/agents/cache-demo-agent.yaml` | Quickstart agent (cache-friendly, no PII) |
+| `examples/agents/customer-support-agent.yaml` | Full demo agent (PII, deps, governance) |
+| `examples/demo/quickstart-chat-request.json` | Quickstart gateway request body |
 | `examples/prompts/support-ticket-summary.yaml` | Sample prompt template |
 | `examples/policies/no-semantic-cache-for-pii.yaml` | Policy example |
 | `examples/demo/sample-chat-request.json` | Gateway request body |
-| `scripts/quickstart.sh` | Automated demo |
+| `scripts/demo-policy-denial.sh` | OPA policy denial demo (403) |
+| `scripts/demo-budget-block.sh` | Budget enforcement demo (429) |
 
 ## Troubleshooting
 

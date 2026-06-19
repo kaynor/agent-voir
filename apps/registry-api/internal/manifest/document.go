@@ -26,7 +26,14 @@ type Spec struct {
 	Models      Models       `yaml:"models" json:"models"`
 	Cache       Cache        `yaml:"cache" json:"cache"`
 	Budget      Budget       `yaml:"budget" json:"budget"`
+	Policies    Policies     `yaml:"policies" json:"policies"`
 	Dependencies Dependencies `yaml:"dependencies" json:"dependencies"`
+}
+
+type Policies struct {
+	PIIAllowed       bool     `yaml:"piiAllowed" json:"pii_allowed"`
+	RequireAuditLog  bool     `yaml:"requireAuditLog" json:"require_audit_log"`
+	AllowedProviders []string `yaml:"allowedProviders" json:"allowed_providers"`
 }
 
 type Cache struct {

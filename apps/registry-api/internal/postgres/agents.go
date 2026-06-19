@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/agents"
@@ -15,6 +16,32 @@ type AgentsStore struct {
 
 func NewAgentsStore(pool *pgxpool.Pool) *AgentsStore {
 	return &AgentsStore{pool: pool}
+}
+
+const agentSelectColumns = `
+	id::text, agent_id, name, version, owner_team, cost_center, environment,
+	framework, risk_level, lifecycle, cache_mode, cache_ttl_seconds, semantic_cache_allowed,
+	policies, data_classes, created_at, updated_at`
+
+func scanAgent(row interface {
+	Scan(dest ...any) error
+}) (agents.Agent, error) {
+	var agent agents.Agent
+	var policiesJSON []byte
+	err := row.Scan(
+		&agent.ID, &agent.AgentID, &agent.Name, &agent.Version, &agent.OwnerTeam,
+		&agent.CostCenter, &agent.Environment, &agent.Framework, &agent.RiskLevel,
+		&agent.Lifecycle, &agent.CacheMode, &agent.CacheTTLSeconds, &agent.SemanticCacheAllowed,
+		&policiesJSON, &agent.DataClasses, &agent.CreatedAt, &agent.UpdatedAt,
+	)
+	if err != nil {
+		return agents.Agent{}, err
+	}
+	_ = json.Unmarshal(policiesJSON, &agent.Policies)
+	if agent.Policies.AllowedProviders == nil {
+		agent.Policies.AllowedProviders = []string{}
+	}
+	return agent, nil
 }
 
 func (s *AgentsStore) List(opts agents.ListOptions) agents.ListResult {
@@ -48,13 +75,11 @@ func (s *AgentsStore) List(opts agents.ListOptions) agents.ListResult {
 	limitArg := len(args) + 1
 	offsetArg := len(args) + 2
 	query := fmt.Sprintf(`
-		SELECT id::text, agent_id, name, version, owner_team, cost_center, environment,
-		       framework, risk_level, lifecycle, cache_mode, cache_ttl_seconds, semantic_cache_allowed,
-		       data_classes, created_at, updated_at
+		SELECT %s
 		FROM agents
 		%s
 		ORDER BY %s %s
-		LIMIT $%d OFFSET $%d`, where, sortColumn, sortOrder, limitArg, offsetArg)
+		LIMIT $%d OFFSET $%d`, agentSelectColumns, where, sortColumn, sortOrder, limitArg, offsetArg)
 	args = append(args, opts.Limit, opts.Offset)
 
 	rows, err := s.pool.Query(context.Background(), query, args...)
@@ -65,13 +90,8 @@ func (s *AgentsStore) List(opts agents.ListOptions) agents.ListResult {
 
 	out := make([]agents.Agent, 0)
 	for rows.Next() {
-		var agent agents.Agent
-		if err := rows.Scan(
-			&agent.ID, &agent.AgentID, &agent.Name, &agent.Version, &agent.OwnerTeam,
-			&agent.CostCenter, &agent.Environment, &agent.Framework, &agent.RiskLevel,
-			&agent.Lifecycle, &agent.CacheMode, &agent.CacheTTLSeconds, &agent.SemanticCacheAllowed,
-			&agent.DataClasses, &agent.CreatedAt, &agent.UpdatedAt,
-		); err != nil {
+		agent, err := scanAgent(rows)
+		if err != nil {
 			return agents.ListResult{Items: []agents.Agent{}, Total: total, Limit: opts.Limit, Offset: opts.Offset}
 		}
 		out = append(out, agent)
@@ -85,20 +105,13 @@ func (s *AgentsStore) List(opts agents.ListOptions) agents.ListResult {
 }
 
 func (s *AgentsStore) Get(agentID, version, environment string) (agents.Agent, bool) {
-	var agent agents.Agent
-	err := s.pool.QueryRow(context.Background(), `
-		SELECT id::text, agent_id, name, version, owner_team, cost_center, environment,
-		       framework, risk_level, lifecycle, cache_mode, cache_ttl_seconds, semantic_cache_allowed,
-		       data_classes, created_at, updated_at
+	row := s.pool.QueryRow(context.Background(), `
+		SELECT `+agentSelectColumns+`
 		FROM agents
 		WHERE agent_id = $1 AND version = $2 AND environment = $3`,
 		agentID, version, environment,
-	).Scan(
-		&agent.ID, &agent.AgentID, &agent.Name, &agent.Version, &agent.OwnerTeam,
-		&agent.CostCenter, &agent.Environment, &agent.Framework, &agent.RiskLevel,
-		&agent.Lifecycle, &agent.CacheMode, &agent.CacheTTLSeconds, &agent.SemanticCacheAllowed,
-		&agent.DataClasses, &agent.CreatedAt, &agent.UpdatedAt,
 	)
+	agent, err := scanAgent(row)
 	if isNoRows(err) {
 		return agents.Agent{}, false
 	}
@@ -110,26 +123,23 @@ func (s *AgentsStore) Get(agentID, version, environment string) (agents.Agent, b
 
 func (s *AgentsStore) Create(req agents.RegisterRequest) (agents.Agent, error) {
 	req.ApplyDefaults()
+	policiesJSON, err := json.Marshal(req.Policies)
+	if err != nil {
+		return agents.Agent{}, err
+	}
 
-	var agent agents.Agent
-	err := s.pool.QueryRow(context.Background(), `
+	row := s.pool.QueryRow(context.Background(), `
 		INSERT INTO agents (
 			agent_id, name, version, owner_team, cost_center, environment,
 			framework, risk_level, lifecycle, cache_mode, cache_ttl_seconds, semantic_cache_allowed,
-			data_classes
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		RETURNING id::text, agent_id, name, version, owner_team, cost_center, environment,
-		          framework, risk_level, lifecycle, cache_mode, cache_ttl_seconds, semantic_cache_allowed,
-		          data_classes, created_at, updated_at`,
+			policies, data_classes
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		RETURNING `+agentSelectColumns,
 		req.AgentID, req.Name, req.Version, req.OwnerTeam, req.CostCenter, req.Environment,
 		req.Framework, req.RiskLevel, req.Lifecycle, req.CacheMode, req.CacheTTLSeconds, req.SemanticCacheAllowed,
-		req.DataClasses,
-	).Scan(
-		&agent.ID, &agent.AgentID, &agent.Name, &agent.Version, &agent.OwnerTeam,
-		&agent.CostCenter, &agent.Environment, &agent.Framework, &agent.RiskLevel,
-		&agent.Lifecycle, &agent.CacheMode, &agent.CacheTTLSeconds, &agent.SemanticCacheAllowed,
-		&agent.DataClasses, &agent.CreatedAt, &agent.UpdatedAt,
+		policiesJSON, req.DataClasses,
 	)
+	agent, err := scanAgent(row)
 	if isUniqueViolation(err) {
 		return agents.Agent{}, agents.ErrConflict
 	}
@@ -176,36 +186,38 @@ func (s *AgentsStore) Update(agentID, version, environment string, req agents.Up
 	if req.SemanticCacheAllowed != nil {
 		existing.SemanticCacheAllowed = *req.SemanticCacheAllowed
 	}
+	if req.Policies != nil {
+		existing.Policies = *req.Policies
+	}
 	if req.DataClasses != nil {
 		existing.DataClasses = append([]string(nil), req.DataClasses...)
 	}
 
-	err := s.pool.QueryRow(context.Background(), `
+	policiesJSON, err := json.Marshal(existing.Policies)
+	if err != nil {
+		return agents.Agent{}, err
+	}
+
+	row := s.pool.QueryRow(context.Background(), `
 		UPDATE agents
 		SET name = $4, owner_team = $5, cost_center = $6, framework = $7,
 		    risk_level = $8, lifecycle = $9, cache_mode = $10, cache_ttl_seconds = $11,
-		    semantic_cache_allowed = $12, data_classes = $13, updated_at = now()
+		    semantic_cache_allowed = $12, policies = $13, data_classes = $14, updated_at = now()
 		WHERE agent_id = $1 AND version = $2 AND environment = $3
-		RETURNING id::text, agent_id, name, version, owner_team, cost_center, environment,
-		          framework, risk_level, lifecycle, cache_mode, cache_ttl_seconds, semantic_cache_allowed,
-		          data_classes, created_at, updated_at`,
+		RETURNING `+agentSelectColumns,
 		agentID, version, environment,
 		existing.Name, existing.OwnerTeam, existing.CostCenter, existing.Framework,
 		existing.RiskLevel, existing.Lifecycle, existing.CacheMode, existing.CacheTTLSeconds,
-		existing.SemanticCacheAllowed, existing.DataClasses,
-	).Scan(
-		&existing.ID, &existing.AgentID, &existing.Name, &existing.Version, &existing.OwnerTeam,
-		&existing.CostCenter, &existing.Environment, &existing.Framework, &existing.RiskLevel,
-		&existing.Lifecycle, &existing.CacheMode, &existing.CacheTTLSeconds, &existing.SemanticCacheAllowed,
-		&existing.DataClasses, &existing.CreatedAt, &existing.UpdatedAt,
+		existing.SemanticCacheAllowed, policiesJSON, existing.DataClasses,
 	)
+	updated, err := scanAgent(row)
 	if isNoRows(err) {
 		return agents.Agent{}, agents.ErrNotFound
 	}
 	if err != nil {
 		return agents.Agent{}, err
 	}
-	return existing, nil
+	return updated, nil
 }
 
 func (s *AgentsStore) Delete(agentID, version, environment string) error {

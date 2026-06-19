@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/budget"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/cache"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/metrics"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/middleware"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/openai"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/pricing"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
 	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
@@ -24,6 +26,8 @@ type Handler struct {
 	cache         cache.Store
 	providers     *providers.Registry
 	agentRegistry *agentregistry.Client
+	budget        *budget.Checker
+	policy        policy.Evaluator
 	usage         usage.Recorder
 }
 
@@ -32,16 +36,23 @@ func NewHandler(
 	cacheStore cache.Store,
 	providerRegistry *providers.Registry,
 	agentRegistry *agentregistry.Client,
+	budgetChecker *budget.Checker,
+	policyEvaluator policy.Evaluator,
 	usageRecorder usage.Recorder,
 ) *Handler {
 	if usageRecorder == nil {
 		usageRecorder = usage.NopRecorder{}
+	}
+	if policyEvaluator == nil {
+		policyEvaluator = policy.NopEvaluator{}
 	}
 	return &Handler{
 		config:        config,
 		cache:         cacheStore,
 		providers:     providerRegistry,
 		agentRegistry: agentRegistry,
+		budget:        budgetChecker,
+		policy:        policyEvaluator,
 		usage:         usageRecorder,
 	}
 }
@@ -94,11 +105,16 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Stream {
-		h.streamChatCompletions(w, r, started, agentID, agentVersion, agentCfg, req)
+		h.streamChatCompletions(w, r, started, agentID, agentVersion, environment, agentCfg, req)
 		return
 	}
 
 	traceID := uuid.NewString()
+
+	if h.enforceGovernance(w, r, started, traceID, agentID, agentVersion, environment, agentCfg, req) {
+		return
+	}
+
 	cacheStatus := "miss"
 	bypass := cache.ShouldBypass(r, agentCfg, req)
 	if bypass {
@@ -198,11 +214,14 @@ func (h *Handler) streamChatCompletions(
 	w http.ResponseWriter,
 	r *http.Request,
 	started time.Time,
-	agentID, agentVersion string,
+	agentID, agentVersion, environment string,
 	agentCfg agentregistry.AgentConfig,
 	req openai.ChatCompletionRequest,
 ) {
 	metrics.RecordCacheBypass()
+	if h.enforceGovernance(w, r, started, "", agentID, agentVersion, environment, agentCfg, req) {
+		return
+	}
 	provider := h.providers.Resolve(req.Model)
 	providerReq := providers.ChatRequest{
 		Model:    req.Model,
@@ -437,4 +456,48 @@ func (h *Handler) loadAgentConfig(r *http.Request, agentID, version, environment
 		}
 	}
 	return cfg
+}
+
+func (h *Handler) enforceGovernance(
+	w http.ResponseWriter,
+	r *http.Request,
+	started time.Time,
+	traceID, agentID, agentVersion, environment string,
+	agentCfg agentregistry.AgentConfig,
+	req openai.ChatCompletionRequest,
+) bool {
+	if environment == "" {
+		environment = "dev"
+	}
+	if traceID == "" {
+		traceID = uuid.NewString()
+	}
+
+	provider := h.providers.Resolve(req.Model)
+	decision := h.policy.Allow(r.Context(), policy.Input{
+		Agent:       agentCfg,
+		Environment: environment,
+		Provider:    provider.Name(),
+	})
+	if !decision.Allowed {
+		metrics.RecordPolicyDenied()
+		h.recordUsage(r, started, traceID, agentID, agentVersion, provider.Name(), req.Model, "bypass", 0, 0, 0, http.StatusForbidden, "policy_denied")
+		writeOpenAIError(w, http.StatusForbidden, "policy_denied", decision.Reason)
+		return true
+	}
+
+	if h.budget != nil {
+		messageTexts := make([]string, len(req.Messages))
+		for i, msg := range req.Messages {
+			messageTexts[i] = msg.Content
+		}
+		tenantID := budget.NormalizeTenant(r.Header.Get(middleware.HeaderTenantID))
+		if violation := h.budget.Check(r.Context(), tenantID, agentID, agentVersion, budget.EstimatePromptTokens(messageTexts)); violation != nil {
+			metrics.RecordBudgetExceeded()
+			h.recordUsage(r, started, traceID, agentID, agentVersion, provider.Name(), req.Model, "bypass", 0, 0, 0, http.StatusTooManyRequests, violation.Code)
+			writeOpenAIError(w, http.StatusTooManyRequests, violation.Code, violation.Message)
+			return true
+		}
+	}
+	return false
 }

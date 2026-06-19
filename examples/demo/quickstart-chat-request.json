@@ -1,0 +1,10 @@
+{
+  "model": "gpt-4.1-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "In one sentence, what does AgentVoir do for enterprise AI agents?"
+    }
+  ],
+  "temperature": 0
+}

@@ -99,6 +99,7 @@ func (s *MemoryStore) Create(req RegisterRequest) (Agent, error) {
 		CacheMode:            req.CacheMode,
 		CacheTTLSeconds:      req.CacheTTLSeconds,
 		SemanticCacheAllowed: req.SemanticCacheAllowed,
+		Policies:             req.Policies,
 		DataClasses:          append([]string(nil), req.DataClasses...),
 		CreatedAt:            now,
 		UpdatedAt:            now,
@@ -148,6 +149,9 @@ func (s *MemoryStore) Update(agentID, version, environment string, req UpdateReq
 	}
 	if req.SemanticCacheAllowed != nil {
 		existing.SemanticCacheAllowed = *req.SemanticCacheAllowed
+	}
+	if req.Policies != nil {
+		existing.Policies = *req.Policies
 	}
 	if req.DataClasses != nil {
 		existing.DataClasses = append([]string(nil), req.DataClasses...)
