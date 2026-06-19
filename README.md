@@ -112,21 +112,35 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 
 ### Phase 2: Enterprise controls
 
+**GitHub showcase track** (`make showcase`, [docs/demo/](docs/demo/)):
+
+- ✅ Gateway OPA policy check (403 on deny)
+- ✅ Gateway monthly budget enforcement (429 on exceed)
+- ✅ Agent policies persisted from YAML manifest
+- ✅ Governance demo scripts (`demo-policy-denial`, `demo-budget-block`)
+- ✅ Admin web console MVP (dashboard, agent list, agent detail)
+- ✅ Grafana overview dashboard (cache, policy, budget metrics)
+- ✅ Cache-friendly quickstart path (`cache-demo-agent`, miss → hit)
+- ⬜ README screenshots / GIF of admin console
+- ⬜ First GitHub Release with showcase features
+
+**Full enterprise controls** (ongoing):
+
 - ⬜ OIDC authentication
 - ⬜ RBAC and service accounts
-- 🟡 Per-agent budgets *(gateway enforcement live)*
+- 🟡 Per-agent budgets *(monthly cap enforced; per-request token cap pending)*
 - ⬜ Per-agent and per-tenant rate limits
 - ⬜ Audit logging
-- 🟡 Policy-as-code engine *(gateway OPA check live)*
+- 🟡 Policy-as-code engine *(gateway OPA live; registry mutation policies pending)*
 - 🟡 Provider routing and fallback
 - ⬜ Provider adapter conformance suite
 - 🟡 Dependency graph API
 - ⬜ Tool and MCP server registry
-- 🟡 OpenTelemetry traces and Prometheus metrics
+- 🟡 OpenTelemetry traces and Prometheus metrics *(gateway `/metrics` + Grafana live; OTel traces pending)*
 - ⬜ Pre-flight token and cost estimation
 - ⬜ Human-in-the-loop approval gates
 - ⬜ Prompt injection and tool-call security
-- 🟡 Admin web console *(MVP dashboard + agent detail)*
+- 🟡 Admin web console *(MVP done; registration UI and policy viewer pending)*
 
 ### Phase 3: Semantic cache and evals
 
