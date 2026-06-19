@@ -15,7 +15,10 @@ Use this checklist when publishing AgentVoir container images and SDK packages.
 1. Create a [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) with a semver tag (for example `v0.1.0`).
 2. The `Release container images` workflow builds and pushes a single image:
    - `ghcr.io/<owner>/agent-voir:<tag>`
-3. Make the GHCR package **public** under **Package settings → Change visibility** so end users can pull without auth.
+3. The same workflow uploads **onebox run assets** to the release:
+   - `agentvoir-onebox-<tag>.zip` — compose, OPA policies, run scripts (~10 KB)
+   - `run-agentvoir.sh` — one-command installer (curl \| bash)
+4. Make the GHCR package **public** under **Package settings → Change visibility** so end users can pull without auth.
 4. Attach release notes summarizing user-visible changes.
 
 ## Supply chain artifacts

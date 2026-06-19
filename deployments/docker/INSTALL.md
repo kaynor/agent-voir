@@ -38,46 +38,50 @@ docker compose version
 
 ## Install and start
 
-### Option A — GitHub Release zip (no Git required)
+### Option A — One command (recommended, no repo download)
 
-1. Open [GitHub Releases](https://github.com/kaynor/agent-voir/releases) and download the **Source code (zip)** for the version you want (e.g. `v1.0.0`).
-
-2. Unzip and enter the folder:
+Requires Docker, `curl`, and `unzip`.
 
 ```bash
-unzip agent-voir-1.0.0.zip
-cd agent-voir-1.0.0
+curl -fsSL https://github.com/kaynor/agent-voir/releases/latest/download/run-agentvoir.sh | bash
 ```
 
-3. Create config (optional — defaults work for a first try):
+Pin a release tag:
 
 ```bash
-cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
+AGENTVOIR_VERSION=v0.2.4 curl -fsSL \
+  https://github.com/kaynor/agent-voir/releases/download/v0.2.4/run-agentvoir.sh | bash
 ```
 
-4. Pull images and start:
+This downloads the small **onebox bundle** (~10 KB + policies), pulls the GHCR image, and starts the stack under `~/.agentvoir/onebox` by default.
+
+### Option B — Onebox zip only (no git clone)
+
+1. Open [GitHub Releases](https://github.com/kaynor/agent-voir/releases)
+2. Download **`agentvoir-onebox-vX.Y.Z.zip`** (not the source code zip)
+3. Run:
 
 ```bash
-docker compose --env-file deployments/docker/.env.onebox \
-  -f deployments/docker/docker-compose.onebox.yml pull
-
-docker compose --env-file deployments/docker/.env.onebox \
-  -f deployments/docker/docker-compose.onebox.yml up -d
+unzip agentvoir-onebox-v0.2.4.zip -d agentvoir-onebox
+cd agentvoir-onebox
+chmod +x onebox.sh onebox-smoke.sh
+./onebox.sh
+./onebox-smoke.sh
 ```
 
-**Or use the helper script** (same steps, no typing compose flags):
+The zip includes compose, OPA policies, and scripts. The AgentVoir app image is pulled from GHCR automatically.
 
-```bash
-chmod +x scripts/onebox.sh
-./scripts/onebox.sh
-```
+### Option C — Full source zip (contributors / advanced)
 
-### Option B — Git clone
+1. Download **Source code (zip)** from [GitHub Releases](https://github.com/kaynor/agent-voir/releases)
+2. Unzip and enter the folder
+3. Run `./scripts/onebox.sh` (optional `.env.onebox` overrides)
+
+### Option D — Git clone
 
 ```bash
 git clone https://github.com/kaynor/agent-voir.git
 cd agent-voir
-cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 ./scripts/onebox.sh
 ```
 

@@ -97,3 +97,28 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ github.repository }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
+
+      - name: Pack onebox run bundle
+        run: |
+          chmod +x scripts/pack-onebox-bundle.sh
+          ./scripts/pack-onebox-bundle.sh "${{ steps.meta.outputs.tag }}" "${{ env.REGISTRY }}/${{ github.repository }}"
+
+      - name: Upload onebox bundle to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          gh release upload "$TAG" \
+            "dist/agentvoir-onebox-${TAG}.zip" \
+            "dist/run-agentvoir.sh" \
+            --clobber
+
+      - name: Upload onebox bundle artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentvoir-onebox-bundle
+          path: |
+            dist/agentvoir-onebox-*.zip
+            dist/run-agentvoir.sh

@@ -253,13 +253,17 @@ agentvoir/
 
 See **[deployments/docker/INSTALL.md](deployments/docker/INSTALL.md)** for the full Docker install guide.
 
-The **onebox** stack uses **pre-built Docker images** — no Make, no Go, and no local compile. Download a [GitHub Release](https://github.com/kaynor/agent-voir/releases) zip (or clone the repo), then:
+The **onebox** stack uses **pre-built Docker images** — no Make, no Go, and no local compile.
+
+**One command (no repo download):**
 
 ```bash
-cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
-./scripts/onebox.sh
-./scripts/onebox-smoke.sh
+curl -fsSL https://github.com/kaynor/agent-voir/releases/latest/download/run-agentvoir.sh | bash
 ```
+
+Or download **`agentvoir-onebox-vX.Y.Z.zip`** from [GitHub Releases](https://github.com/kaynor/agent-voir/releases), unzip, and run `./onebox.sh`.
+
+Contributors with a git clone can still use `./scripts/onebox.sh`.
 
 **End-to-end demo** (register agent, cache miss → hit, usage events):
 
