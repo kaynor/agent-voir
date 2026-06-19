@@ -23,5 +23,6 @@ func (a *RegistryAdapter) GetBudget(ctx context.Context, agentID, version string
 		MonthlyUSD:                    limits.MonthlyUSD,
 		MaxPromptTokensPerRequest:     limits.MaxPromptTokensPerRequest,
 		MaxCompletionTokensPerRequest: limits.MaxCompletionTokensPerRequest,
+		RequestsPerMinute:             limits.RequestsPerMinute,
 	}, nil
 }

@@ -8,9 +8,10 @@ import (
 
 // Limits are per-agent spend and token caps from the registry.
 type Limits struct {
-	MonthlyUSD                  float64
-	MaxPromptTokensPerRequest   int64
+	MonthlyUSD                    float64
+	MaxPromptTokensPerRequest     int64
 	MaxCompletionTokensPerRequest int64
+	RequestsPerMinute             int64
 }
 
 // SpendSummary is monthly spend for an agent.
@@ -79,6 +80,17 @@ func (c *Checker) Check(
 		}
 	}
 	return nil
+}
+
+func (c *Checker) RateLimit(ctx context.Context, tenantID, agentID, version string) (limit int64, violation *Violation) {
+	if c == nil || c.registry == nil {
+		return 0, nil
+	}
+	limits, err := c.registry.GetBudget(ctx, agentID, version)
+	if err != nil {
+		return 0, nil
+	}
+	return limits.RequestsPerMinute, nil
 }
 
 func EstimatePromptTokens(messages []string) int64 {

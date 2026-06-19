@@ -39,6 +39,9 @@ type AgentConfig struct {
 	DataClasses          []string
 	PrimaryModel         string
 	PrimaryProvider      string
+	FallbackProvider     string
+	FallbackModel        string
+	RoutingPolicy        string
 }
 
 // BudgetLimits are spend caps loaded from the registry API.
@@ -46,6 +49,7 @@ type BudgetLimits struct {
 	MonthlyUSD                    float64
 	MaxPromptTokensPerRequest     int64
 	MaxCompletionTokensPerRequest int64
+	RequestsPerMinute             int64
 }
 
 // Client loads agent runtime configuration from the registry API.
@@ -152,6 +156,7 @@ func (c *Client) GetBudget(ctx context.Context, agentID, version string) (Budget
 		MonthlyUSD                    float64 `json:"monthly_usd"`
 		MaxPromptTokensPerRequest     int64   `json:"max_prompt_tokens_per_request"`
 		MaxCompletionTokensPerRequest int64   `json:"max_completion_tokens_per_request"`
+		RequestsPerMinute             int64   `json:"requests_per_minute"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return BudgetLimits{}, err
@@ -160,6 +165,7 @@ func (c *Client) GetBudget(ctx context.Context, agentID, version string) (Budget
 		MonthlyUSD:                    payload.MonthlyUSD,
 		MaxPromptTokensPerRequest:     payload.MaxPromptTokensPerRequest,
 		MaxCompletionTokensPerRequest: payload.MaxCompletionTokensPerRequest,
+		RequestsPerMinute:             payload.RequestsPerMinute,
 	}
 
 	c.mu.Lock()
@@ -238,12 +244,18 @@ func (c *Client) fetch(ctx context.Context, agentID, version, environment string
 			defer routeResp.Body.Close()
 			if routeResp.StatusCode == http.StatusOK {
 				var route struct {
-					PrimaryProvider string `json:"primary_provider"`
-					PrimaryModel    string `json:"primary_model"`
+					PrimaryProvider  string `json:"primary_provider"`
+					PrimaryModel     string `json:"primary_model"`
+					FallbackProvider string `json:"fallback_provider"`
+					FallbackModel    string `json:"fallback_model"`
+					RoutingPolicy    string `json:"routing_policy"`
 				}
 				if json.NewDecoder(routeResp.Body).Decode(&route) == nil {
 					cfg.PrimaryProvider = route.PrimaryProvider
 					cfg.PrimaryModel = route.PrimaryModel
+					cfg.FallbackProvider = route.FallbackProvider
+					cfg.FallbackModel = route.FallbackModel
+					cfg.RoutingPolicy = route.RoutingPolicy
 				}
 			}
 		}

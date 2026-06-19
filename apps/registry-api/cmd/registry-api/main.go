@@ -33,7 +33,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthz)
-	server.RegisterRoutes(mux, stores)
+	server.RegisterRoutes(mux, stores, os.Getenv("TOKEN_ACCOUNTING_URL"), os.Getenv("OPA_URL"))
 
 	httpServer := &http.Server{
 		Addr:              addr,

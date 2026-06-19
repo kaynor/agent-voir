@@ -1,0 +1,26 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: Agent
+metadata:
+  name: fallback-demo-agent
+  version: 0.1.0
+spec:
+  ownerTeam: platform
+  environment: staging
+  riskLevel: low
+  lifecycle: draft
+  models:
+    primary:
+      provider: unavailable
+      model: gpt-4.1-mini
+    fallback:
+      provider: mock
+      model: gpt-4.1-mini
+  cache:
+    mode: off
+  policies:
+    piiAllowed: false
+    requireAuditLog: false
+    allowedProviders:
+      - unavailable
+      - mock
+      - openai

@@ -55,7 +55,8 @@ type ModelRef struct {
 type Budget struct {
 	MonthlyUSD                    float64 `yaml:"monthlyUsd" json:"monthly_usd"`
 	MaxPromptTokensPerRequest     int64   `yaml:"maxPromptTokensPerRequest" json:"max_prompt_tokens_per_request"`
-	MaxCompletionTokensPerRequest int64 `yaml:"maxCompletionTokensPerRequest" json:"max_completion_tokens_per_request"`
+	MaxCompletionTokensPerRequest int64   `yaml:"maxCompletionTokensPerRequest" json:"max_completion_tokens_per_request"`
+	RequestsPerMinute             int64   `yaml:"requestsPerMinute" json:"requests_per_minute"`
 }
 
 type Dependencies struct {

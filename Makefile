@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean
+.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean showcase demo-policy demo-budget demo-rate-limit demo-fallback demo-budget-status demo-policy-simulate seed-demo wait-for-onebox test-migrations
 
 ONEBOX_COMPOSE := deployments/docker/docker-compose.onebox.yml
 ONEBOX_BUILD_COMPOSE := deployments/docker/docker-compose.onebox.build.yml
@@ -17,7 +17,11 @@ help:
 	@echo "  make quickstart           End-to-end demo (onebox + agent + cache + usage)"
 	@echo "  make demo-policy          OPA policy denial demo (HTTP 403)"
 	@echo "  make demo-budget          Budget enforcement demo (HTTP 429)"
-	@echo "  make showcase             quickstart + governance demos"
+	@echo "  make demo-rate-limit      Per-agent rate limit demo (HTTP 429)"
+	@echo "  make demo-fallback        Provider fallback demo (primary → mock)"
+	@echo "  make demo-budget-status   Budget utilization API demo"
+	@echo "  make demo-policy-simulate Policy simulation API demo"
+	@echo "  make showcase             quickstart + all governance demos"
 	@echo "  make run-web              Admin console at http://localhost:3000"
 	@echo "  make dev-docs             Start local Swagger UI for API specs (:8089)"
 	@echo "  make dev-up               Start local infrastructure (Postgres, Redis, ClickHouse, ...)"
@@ -90,13 +94,35 @@ demo-budget:
 	@chmod +x scripts/demo-budget-block.sh
 	@./scripts/demo-budget-block.sh
 
+demo-rate-limit:
+	@chmod +x scripts/demo-rate-limit.sh
+	@./scripts/demo-rate-limit.sh
+
+demo-fallback:
+	@chmod +x scripts/demo-fallback.sh
+	@./scripts/demo-fallback.sh
+
+demo-budget-status:
+	@chmod +x scripts/demo-budget-status.sh
+	@./scripts/demo-budget-status.sh
+
+demo-policy-simulate:
+	@chmod +x scripts/demo-policy-simulate.sh
+	@./scripts/demo-policy-simulate.sh
+
 showcase:
-	@chmod +x scripts/quickstart.sh scripts/demo-policy-denial.sh scripts/demo-budget-block.sh
+	@chmod +x scripts/quickstart.sh scripts/demo-policy-denial.sh scripts/demo-budget-block.sh \
+		scripts/demo-rate-limit.sh scripts/demo-fallback.sh scripts/demo-budget-status.sh \
+		scripts/demo-policy-simulate.sh
 	@./scripts/quickstart.sh --no-start || ./scripts/quickstart.sh
 	@./scripts/demo-policy-denial.sh
 	@./scripts/demo-budget-block.sh
+	@./scripts/demo-rate-limit.sh
+	@./scripts/demo-fallback.sh
+	@./scripts/demo-budget-status.sh
+	@./scripts/demo-policy-simulate.sh
 
-	db-migrate:
+db-migrate:
 	cd apps/registry-api && go run ./cmd/migrate
 
 seed-demo:

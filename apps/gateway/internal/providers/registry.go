@@ -1,15 +1,22 @@
 package providers
 
-import "strings"
+import (
+	"strings"
+)
 
 // Registry selects a provider for a requested model.
 type Registry struct {
-	openai *OpenAIProvider
-	mock   *MockProvider
+	openai      *OpenAIProvider
+	mock        *MockProvider
+	unavailable *UnavailableProvider
 }
 
 func NewRegistry(openai *OpenAIProvider, mock *MockProvider) *Registry {
-	return &Registry{openai: openai, mock: mock}
+	return &Registry{
+		openai:      openai,
+		mock:        mock,
+		unavailable: NewUnavailableProvider(),
+	}
 }
 
 func (r *Registry) Resolve(model string) Provider {
@@ -17,6 +24,22 @@ func (r *Registry) Resolve(model string) Provider {
 		return r.openai
 	}
 	return r.mock
+}
+
+func (r *Registry) ResolveProvider(providerName, model string) Provider {
+	switch strings.ToLower(strings.TrimSpace(providerName)) {
+	case "openai":
+		if r.openai != nil {
+			return r.openai
+		}
+	case "mock":
+		if r.mock != nil {
+			return r.mock
+		}
+	case "unavailable", "mock-unavailable":
+		return r.unavailable
+	}
+	return r.Resolve(model)
 }
 
 func looksLikeOpenAIModel(model string) bool {

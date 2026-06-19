@@ -15,6 +15,7 @@ import (
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/middleware"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/ratelimit"
 	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
 )
@@ -47,6 +48,15 @@ func main() {
 		log.Printf("AgentVoir gateway enforcing OPA policies at %s", config.OPAURL)
 	}
 
+	var rateLimiter *ratelimit.Limiter
+	if config.RedisAddr != "" {
+		rateLimiter, err = ratelimit.NewLimiter(config.RedisAddr)
+		if err != nil {
+			log.Fatalf("rate limiter init failed: %v", err)
+		}
+		log.Printf("AgentVoir gateway enforcing per-agent rate limits via Redis at %s", config.RedisAddr)
+	}
+
 	handler := gateway.NewHandler(
 		config,
 		cacheStore,
@@ -54,6 +64,7 @@ func main() {
 		agentRegistry,
 		budgetChecker,
 		policyEvaluator,
+		rateLimiter,
 		usage.NewRecorder(config.TokenAccountingURL),
 	)
 

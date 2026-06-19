@@ -279,18 +279,36 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 
 **Goal:** Make AgentVoir safe and manageable for real enterprise deployments — proper login, permissions, spending limits, audit trails, and operational visibility.
 
-### GitHub showcase track (in progress)
+### GitHub showcase track (v2 — ready for release)
 
-High-impact items for visitors evaluating AgentVoir on GitHub:
+High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showcase`** after onebox is up.
+
+**Governance (gateway + registry):**
+
+- [x] Gateway OPA policy check before upstream calls (403 on deny)
+- [x] Gateway monthly budget enforcement (429 on exceed)
+- [x] Per-agent rate limits — Redis fixed-window, 429 + `Retry-After`
+- [x] Provider routing fallback — primary fails → backup (`x-routing-fallback`)
+- [x] Budget utilization API — `GET /v1/agents/{agentID}/budget/status`
+- [x] Policy simulation API — `POST /v1/policies/simulate`
+- [x] Persist agent policies, budgets, and model routes from YAML manifest
+
+**Demos and docs:**
+
+- [x] Demo scripts: `demo-policy-denial`, `demo-budget-block`, `demo-rate-limit`, `demo-fallback`, `demo-budget-status`, `demo-policy-simulate`
+- [x] Example agents: `rate-limit-demo-agent`, `fallback-demo-agent`
+- [x] Cache-friendly quickstart path (`cache-demo-agent`, miss → hit)
+- [x] Demo walkthrough — [docs/demo/README.md](demo/README.md)
+
+**Console and observability:**
 
 - [x] Admin web console MVP (dashboard, agent list, agent detail)
-- [x] Gateway OPA policy check before upstream calls
-- [x] Gateway monthly budget enforcement (429)
-- [x] Demo scripts: `demo-policy-denial.sh`, `demo-budget-block.sh`
-- [x] Persist agent policies from YAML manifest
 - [x] Grafana overview dashboard panels (cache, policy, budget metrics)
+
+**Remaining showcase polish:**
+
 - [ ] README screenshots / GIF of admin console
-- [ ] Publish GitHub Release with showcase features
+- [ ] Publish GitHub Release with showcase v2 features (GHCR tag + onebox bundle)
 
 ---
 
@@ -343,25 +361,26 @@ High-impact items for visitors evaluating AgentVoir on GitHub:
 - [ ] Enforce max tokens per request before calling provider
 - [x] Track cumulative spend per agent per month (from ClickHouse rollups)
 - [x] Return `429` or structured error when monthly budget exceeded
-- [ ] Add budget utilization API (`GET /v1/agents/{agentID}/budget/status`)
+- [x] Add budget utilization API (`GET /v1/agents/{agentID}/budget/status`)
 - [ ] Optional: soft limits (warn) vs hard limits (block)
 - [ ] Notify owners when budget reaches 80% / 100% thresholds
 
 ---
 
-### ⬜ Per-agent and per-tenant rate limits
+### 🟡 Per-agent and per-tenant rate limits
 
 **What it means:** Prevent any single agent or customer (tenant) from flooding the gateway with too many requests per minute. Protects shared infrastructure and prevents runaway automation loops from causing outages or surprise bills.
 
 **TODO items:**
 
-- [ ] Add rate limit fields to budget/config model (requests per minute, tokens per minute)
-- [ ] Implement token-bucket or sliding-window limiter in gateway (Redis-backed)
-- [ ] Apply limits per agent ID
-- [ ] Apply limits per tenant ID (`x-tenant-id` header)
-- [ ] Return `429 Too Many Requests` with `Retry-After` header
+- [x] Add rate limit fields to budget/config model (requests per minute)
+- [x] Implement fixed-window limiter in gateway (Redis-backed)
+- [x] Apply limits per agent ID
+- [x] Apply limits per tenant ID (`x-tenant-id` header)
+- [x] Return `429 Too Many Requests` with `Retry-After` header
 - [ ] Record rate-limit events in usage/analytics stream
 - [ ] Admin API to view current rate-limit state per agent
+- [ ] Add tokens per minute limit field
 - [ ] Configurable burst allowance vs sustained rate
 - [ ] Load test rate limiter under concurrent load
 
@@ -384,7 +403,7 @@ High-impact items for visitors evaluating AgentVoir on GitHub:
 
 ---
 
-### ⬜ Policy-as-code engine
+### 🟡 Policy-as-code engine
 
 **What it means:** A centralized policy layer decides whether an agent may call a model, use a tool, cache a response, access a dependency, or move to production. This makes AgentVoir a governance control plane instead of only a proxy.
 
@@ -401,7 +420,7 @@ High-impact items for visitors evaluating AgentVoir on GitHub:
 - [ ] Implement registry policy check before lifecycle promotion
 - [ ] Add policy decision logs to audit events
 - [ ] Add policy test fixtures using `opa test`
-- [ ] Add policy simulation endpoint: `POST /v1/policies/simulate`
+- [x] Add policy simulation endpoint: `POST /v1/policies/simulate`
 - [ ] Document "Writing AgentVoir policies"
 
 ---
@@ -416,11 +435,12 @@ High-impact items for visitors evaluating AgentVoir on GitHub:
 - [x] Implement registry API for model routes (`GET/PUT /v1/agents/{agentID}/model-route`)
 - [x] Accept model routes from agent YAML manifest
 - [x] Gateway provider registry with OpenAI and mock adapters
-- [ ] Gateway loads model route from registry for each agent
-- [ ] Attempt primary provider first; on failure, try fallback
-- [ ] Configurable routing policy (`primary_only`, `primary_then_fallback`, `round_robin`)
+- [x] Gateway loads model route from registry for each agent
+- [x] Attempt primary provider first; on failure, try fallback
+- [x] Configurable routing policy (`primary_then_fallback`; `primary_only` supported)
+- [ ] Add `round_robin` routing policy
 - [ ] Add Anthropic, Azure OpenAI, and local model adapters
-- [ ] Record which provider was actually used in usage events and response headers
+- [x] Record which provider was actually used in usage events and response headers
 - [ ] Circuit breaker when provider error rate exceeds threshold
 - [ ] Admin UI or API to test routing without live traffic
 

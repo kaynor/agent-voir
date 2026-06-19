@@ -15,6 +15,7 @@ import (
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/pricing"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/ratelimit"
 	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ type Handler struct {
 	agentRegistry *agentregistry.Client
 	budget        *budget.Checker
 	policy        policy.Evaluator
+	rateLimit     *ratelimit.Limiter
 	usage         usage.Recorder
 }
 
@@ -38,6 +40,7 @@ func NewHandler(
 	agentRegistry *agentregistry.Client,
 	budgetChecker *budget.Checker,
 	policyEvaluator policy.Evaluator,
+	rateLimiter *ratelimit.Limiter,
 	usageRecorder usage.Recorder,
 ) *Handler {
 	if usageRecorder == nil {
@@ -53,6 +56,7 @@ func NewHandler(
 		agentRegistry: agentRegistry,
 		budget:        budgetChecker,
 		policy:        policyEvaluator,
+		rateLimit:     rateLimiter,
 		usage:         usageRecorder,
 	}
 }
@@ -145,18 +149,25 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	provider := h.providers.Resolve(req.Model)
-	providerReq := providers.ChatRequest{
-		Model:    req.Model,
-		Messages: toProviderMessages(req.Messages),
+	primaryProvider := agentCfg.PrimaryProvider
+	if primaryProvider == "" {
+		primaryProvider = provider.Name()
 	}
-
-	var err error
-	providerResp, err = provider.ChatCompletions(r.Context(), providerReq)
+	routeResult, err := h.providers.CallWithFallback(
+		r.Context(),
+		agentCfg.PrimaryProvider,
+		req.Model,
+		agentCfg.FallbackProvider,
+		agentCfg.FallbackModel,
+		agentCfg.RoutingPolicy,
+		toProviderMessages(req.Messages),
+	)
 	if err != nil {
-		h.recordUsage(r, started, traceID, agentID, agentVersion, "", req.Model, cacheStatus, 0, 0, 0, http.StatusBadGateway, "upstream_error")
+		h.recordUsage(r, started, traceID, agentID, agentVersion, primaryProvider, req.Model, cacheStatus, 0, 0, 0, http.StatusBadGateway, "upstream_error")
 		writeOpenAIError(w, http.StatusBadGateway, "upstream_error", err.Error())
 		return
 	}
+	providerResp = routeResult.Response
 	raw = providerResp.Raw
 	costUSD := providerResp.CostUSD
 	if costUSD == 0 {
@@ -189,6 +200,9 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		costUSD,
 		traceID,
 	)
+	if routeResult.Fallback {
+		w.Header().Set("x-routing-fallback", "true")
+	}
 	w.Header().Set(middleware.HeaderCacheStatus, cacheStatus)
 	h.recordUsage(
 		r,
@@ -223,17 +237,21 @@ func (h *Handler) streamChatCompletions(
 		return
 	}
 	provider := h.providers.Resolve(req.Model)
-	providerReq := providers.ChatRequest{
-		Model:    req.Model,
-		Messages: toProviderMessages(req.Messages),
-	}
-
-	resp, err := provider.ChatCompletions(r.Context(), providerReq)
+	routeResult, err := h.providers.CallWithFallback(
+		r.Context(),
+		agentCfg.PrimaryProvider,
+		req.Model,
+		agentCfg.FallbackProvider,
+		agentCfg.FallbackModel,
+		agentCfg.RoutingPolicy,
+		toProviderMessages(req.Messages),
+	)
 	if err != nil {
-		h.recordUsage(r, started, "", agentID, agentVersion, "", req.Model, "bypass", 0, 0, 0, http.StatusBadGateway, "upstream_error")
+		h.recordUsage(r, started, "", agentID, agentVersion, provider.Name(), req.Model, "bypass", 0, 0, 0, http.StatusBadGateway, "upstream_error")
 		writeOpenAIError(w, http.StatusBadGateway, "upstream_error", err.Error())
 		return
 	}
+	resp := routeResult.Response
 
 	var completion openai.ChatCompletionResponse
 	if err := json.Unmarshal(resp.Raw, &completion); err != nil {
@@ -486,12 +504,26 @@ func (h *Handler) enforceGovernance(
 		return true
 	}
 
+	tenantID := budget.NormalizeTenant(r.Header.Get(middleware.HeaderTenantID))
+	if h.budget != nil && h.rateLimit != nil {
+		rpm, _ := h.budget.RateLimit(r.Context(), tenantID, agentID, agentVersion)
+		if rpm > 0 {
+			allowed, retryAfter := h.rateLimit.Allow(r.Context(), ratelimit.AgentKey(tenantID, agentID), rpm)
+			if !allowed {
+				metrics.RecordRateLimited()
+				w.Header().Set("Retry-After", ratelimit.RetryAfterHeader(retryAfter))
+				h.recordUsage(r, started, traceID, agentID, agentVersion, provider.Name(), req.Model, "bypass", 0, 0, 0, http.StatusTooManyRequests, "rate_limit_exceeded")
+				writeOpenAIError(w, http.StatusTooManyRequests, "rate_limit_exceeded", fmt.Sprintf("rate limit exceeded (%d requests/minute)", rpm))
+				return true
+			}
+		}
+	}
+
 	if h.budget != nil {
 		messageTexts := make([]string, len(req.Messages))
 		for i, msg := range req.Messages {
 			messageTexts[i] = msg.Content
 		}
-		tenantID := budget.NormalizeTenant(r.Header.Get(middleware.HeaderTenantID))
 		if violation := h.budget.Check(r.Context(), tenantID, agentID, agentVersion, budget.EstimatePromptTokens(messageTexts)); violation != nil {
 			metrics.RecordBudgetExceeded()
 			h.recordUsage(r, started, traceID, agentID, agentVersion, provider.Name(), req.Model, "bypass", 0, 0, 0, http.StatusTooManyRequests, violation.Code)

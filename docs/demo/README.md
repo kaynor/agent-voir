@@ -108,7 +108,39 @@ Sends a gateway request with `x-agent-environment: production` for a **draft** a
 
 Registers `budget-demo-agent` with a $0.001 monthly cap, simulates spend via usage ingestion, then shows the gateway blocking the next request (HTTP 429).
 
-### 7. Admin console
+### 7. Rate limit demo (live)
+
+```bash
+./scripts/demo-rate-limit.sh
+```
+
+Registers `rate-limit-demo-agent` with 5 requests/minute, sends repeated gateway calls until the limiter returns HTTP 429 with `Retry-After`.
+
+### 8. Provider fallback demo (live)
+
+```bash
+./scripts/demo-fallback.sh
+```
+
+Registers `fallback-demo-agent` with primary provider `unavailable` and fallback `mock`. The gateway succeeds via fallback and sets `x-routing-fallback: true`.
+
+### 9. Budget status API
+
+```bash
+./scripts/demo-budget-status.sh
+```
+
+Calls `GET /v1/agents/budget-demo-agent/budget/status` for monthly utilization fields.
+
+### 10. Policy simulation API
+
+```bash
+./scripts/demo-policy-simulate.sh
+```
+
+Calls `POST /v1/policies/simulate` to evaluate a draft agent against production policy without sending live traffic.
+
+### 11. Admin console
 
 ```bash
 make run-web   # http://localhost:3000
@@ -116,7 +148,7 @@ make run-web   # http://localhost:3000
 
 Dashboard shows agent count, monthly spend, cache hit rate, and agent detail pages with budgets, policies, and dependencies.
 
-### 8. Policy denial scenario (reference)
+### 12. Policy denial scenario (reference)
 
 See [examples/demo/policy-denial-scenario.md](../../examples/demo/policy-denial-scenario.md) for the OPA input shape. The gateway now calls OPA on every upstream request when `OPA_URL` is set.
 
@@ -126,12 +158,18 @@ See [examples/demo/policy-denial-scenario.md](../../examples/demo/policy-denial-
 | ---- | ------- |
 | `examples/agents/cache-demo-agent.yaml` | Quickstart agent (cache-friendly, no PII) |
 | `examples/agents/customer-support-agent.yaml` | Full demo agent (PII, deps, governance) |
+| `examples/agents/rate-limit-demo-agent.yaml` | Rate limit demo (5 req/min) |
+| `examples/agents/fallback-demo-agent.yaml` | Provider fallback demo |
 | `examples/demo/quickstart-chat-request.json` | Quickstart gateway request body |
 | `examples/prompts/support-ticket-summary.yaml` | Sample prompt template |
 | `examples/policies/no-semantic-cache-for-pii.yaml` | Policy example |
 | `examples/demo/sample-chat-request.json` | Gateway request body |
 | `scripts/demo-policy-denial.sh` | OPA policy denial demo (403) |
 | `scripts/demo-budget-block.sh` | Budget enforcement demo (429) |
+| `scripts/demo-rate-limit.sh` | Per-agent rate limit demo (429) |
+| `scripts/demo-fallback.sh` | Provider fallback demo |
+| `scripts/demo-budget-status.sh` | Budget utilization API demo |
+| `scripts/demo-policy-simulate.sh` | Policy simulation API demo |
 
 ## Troubleshooting
 

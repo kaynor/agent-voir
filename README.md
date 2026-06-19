@@ -17,7 +17,7 @@
 
 It helps enterprises **register agents**, **govern model/tool access**, **track token usage and cost**, **map dependencies**, **enforce policy-as-code**, and **cache repeated LLM requests** through an OpenAI-compatible proxy.
 
-> Status: Phase 1 complete; Phase 2 showcase (admin console, OPA policy, budget enforcement) landing now.
+> Status: Phase 1 complete; Phase 2 showcase v2 (rate limits, provider fallback, budget status, policy simulate) ready for release.
 
 ![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
 
@@ -116,23 +116,27 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 
 - ✅ Gateway OPA policy check (403 on deny)
 - ✅ Gateway monthly budget enforcement (429 on exceed)
+- ✅ Per-agent rate limits (429 + Retry-After, Redis-backed)
+- ✅ Provider routing fallback (primary → backup on failure)
+- ✅ Budget utilization API (`GET /v1/agents/{id}/budget/status`)
+- ✅ Policy simulation API (`POST /v1/policies/simulate`)
 - ✅ Agent policies persisted from YAML manifest
-- ✅ Governance demo scripts (`demo-policy-denial`, `demo-budget-block`)
+- ✅ Governance demo scripts (`demo-policy-denial`, `demo-budget-block`, `demo-rate-limit`, `demo-fallback`, `demo-budget-status`, `demo-policy-simulate`)
 - ✅ Admin web console MVP (dashboard, agent list, agent detail)
 - ✅ Grafana overview dashboard (cache, policy, budget metrics)
 - ✅ Cache-friendly quickstart path (`cache-demo-agent`, miss → hit)
 - ⬜ README screenshots / GIF of admin console
-- ⬜ First GitHub Release with showcase features
+- ⬜ Publish GitHub Release with showcase v2 features (GHCR + onebox bundle)
 
 **Full enterprise controls** (ongoing):
 
 - ⬜ OIDC authentication
 - ⬜ RBAC and service accounts
-- 🟡 Per-agent budgets *(monthly cap enforced; per-request token cap pending)*
-- ⬜ Per-agent and per-tenant rate limits
+- 🟡 Per-agent budgets *(monthly cap + utilization API; per-request token cap pending)*
+- 🟡 Per-agent and per-tenant rate limits *(requests/minute enforced; tokens/minute pending)*
 - ⬜ Audit logging
-- 🟡 Policy-as-code engine *(gateway OPA live; registry mutation policies pending)*
-- 🟡 Provider routing and fallback
+- 🟡 Policy-as-code engine *(gateway OPA live; registry simulate endpoint live; mutation policies pending)*
+- 🟡 Provider routing and fallback *(primary_then_fallback live; round_robin pending)*
 - ⬜ Provider adapter conformance suite
 - 🟡 Dependency graph API
 - ⬜ Tool and MCP server registry
@@ -295,7 +299,11 @@ After onebox is running (`make onebox-up-build` for contributors with latest cod
 ```bash
 ./scripts/demo-policy-denial.sh   # OPA denies draft agent in production (HTTP 403)
 ./scripts/demo-budget-block.sh    # Monthly budget exceeded (HTTP 429)
-make showcase                     # quickstart + both governance demos
+./scripts/demo-rate-limit.sh      # Per-agent requests/minute (HTTP 429 + Retry-After)
+./scripts/demo-fallback.sh        # Primary provider fails → mock fallback
+./scripts/demo-budget-status.sh   # Budget utilization from registry API
+./scripts/demo-policy-simulate.sh # Policy what-if via registry API
+make showcase                     # quickstart + all governance demos
 ```
 
 ### Admin web console

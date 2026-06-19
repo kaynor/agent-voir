@@ -116,11 +116,13 @@ func Register(stores Stores, doc *Document) (RegistrationResult, error) {
 
 	if doc.Spec.Budget.MonthlyUSD > 0 ||
 		doc.Spec.Budget.MaxPromptTokensPerRequest > 0 ||
-		doc.Spec.Budget.MaxCompletionTokensPerRequest > 0 {
+		doc.Spec.Budget.MaxCompletionTokensPerRequest > 0 ||
+		doc.Spec.Budget.RequestsPerMinute > 0 {
 		budget := stores.Budgets.Upsert(agentID, version, budgets.UpsertRequest{
 			MonthlyUSD:                    doc.Spec.Budget.MonthlyUSD,
 			MaxPromptTokensPerRequest:     doc.Spec.Budget.MaxPromptTokensPerRequest,
 			MaxCompletionTokensPerRequest: doc.Spec.Budget.MaxCompletionTokensPerRequest,
+			RequestsPerMinute:             doc.Spec.Budget.RequestsPerMinute,
 		})
 		result.Budget = &budget
 	}

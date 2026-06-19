@@ -13,7 +13,7 @@ import (
 func TestRegistryAPIEndpoints(t *testing.T) {
 	stores := server.NewStores()
 	mux := http.NewServeMux()
-	server.RegisterRoutes(mux, stores)
+	server.RegisterRoutes(mux, stores, "", "")
 
 	agentBody := `{
 		"agent_id": "customer-support-agent",

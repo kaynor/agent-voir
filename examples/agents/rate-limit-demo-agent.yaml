@@ -1,0 +1,24 @@
+apiVersion: agentvoir.dev/v1alpha1
+kind: Agent
+metadata:
+  name: rate-limit-demo-agent
+  version: 0.1.0
+spec:
+  ownerTeam: platform
+  environment: staging
+  riskLevel: low
+  lifecycle: draft
+  models:
+    primary:
+      provider: mock
+      model: gpt-4.1-mini
+  cache:
+    mode: off
+  budget:
+    requestsPerMinute: 5
+  policies:
+    piiAllowed: false
+    requireAuditLog: false
+    allowedProviders:
+      - mock
+      - openai
