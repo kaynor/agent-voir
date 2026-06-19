@@ -24,8 +24,16 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /v1/agents/{agentID}", h.deleteAgent)
 }
 
-func (h *Handler) listAgents(w http.ResponseWriter, _ *http.Request) {
-	httputil.WriteJSON(w, http.StatusOK, h.store.List())
+func (h *Handler) listAgents(w http.ResponseWriter, r *http.Request) {
+	opts, msg := ParseListOptions(r)
+	if msg != "" {
+		httputil.WriteError(w, http.StatusBadRequest, msg)
+		return
+	}
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	httputil.WriteJSON(w, http.StatusOK, h.store.List(opts))
 }
 
 func (h *Handler) registerAgent(w http.ResponseWriter, r *http.Request) {
@@ -37,6 +45,11 @@ func (h *Handler) registerAgent(w http.ResponseWriter, r *http.Request) {
 
 	if msg := req.Validate(); msg != "" {
 		httputil.WriteError(w, http.StatusBadRequest, msg)
+		return
+	}
+	req.ApplyDefaults()
+	if err := ValidateLifecycle(req.Lifecycle); err != nil {
+		httputil.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -86,10 +99,22 @@ func (h *Handler) updateAgent(w http.ResponseWriter, r *http.Request) {
 		environment = "dev"
 	}
 
+	existing, found := h.store.Get(agentID, version, environment)
+	if !found {
+		httputil.WriteError(w, http.StatusNotFound, "agent not found")
+		return
+	}
+
 	var req UpdateRequest
 	if err := httputil.DecodeJSON(r, &req); err != nil {
 		httputil.WriteError(w, http.StatusBadRequest, "invalid JSON body")
 		return
+	}
+	if req.Lifecycle != "" {
+		if err := ValidateLifecycleTransition(existing.Lifecycle, req.Lifecycle); err != nil {
+			httputil.WriteError(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 
 	agent, err := h.store.Update(agentID, version, environment, req)

@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/agentvoir/agentvoir/apps/registry-api/internal/httputil"
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/postgres"
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/server"
 )
@@ -36,7 +37,7 @@ func main() {
 
 	httpServer := &http.Server{
 		Addr:              addr,
-		Handler:           mux,
+		Handler:           httputil.WrapDevCORS(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

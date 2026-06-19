@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: AgentVoir Gateway API
   version: 0.1.0
@@ -7,7 +7,11 @@ info:
     See also the [Registry API](openapi.yaml).
 servers:
   - url: http://localhost:8080
-    description: Local onebox gateway
+    description: Local onebox / dev stack
+  - url: http://127.0.0.1:8080
+    description: Local onebox (127.0.0.1)
+  - url: http://localhost:18080
+    description: Custom port (set AGENTVOIR_GATEWAY_PORT)
 paths:
   /healthz:
     get:

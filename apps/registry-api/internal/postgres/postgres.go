@@ -53,6 +53,26 @@ func Migrate(dsn string) error {
 	return nil
 }
 
+// MigrateDown rolls back all postgres migrations (for CI verification).
+func MigrateDown(dsn string) error {
+	dir, err := DefaultMigrationsDir()
+	if err != nil {
+		return err
+	}
+
+	sourceURL := "file://" + filepath.ToSlash(dir)
+	m, err := migrate.New(sourceURL, dsn)
+	if err != nil {
+		return fmt.Errorf("create migrator: %w", err)
+	}
+	defer m.Close()
+
+	if err := m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("rollback migrations: %w", err)
+	}
+	return nil
+}
+
 // NewPool connects to PostgreSQL and verifies connectivity.
 func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)

@@ -19,7 +19,7 @@ func TestChatCompletionsMockProvider(t *testing.T) {
 		CacheMode:       "exact_only",
 		CacheTTLSeconds: 60,
 	}
-	handler := NewHandler(cfg, cache.NewMemoryStore(), providers.NewRegistry(nil, providers.NewMockProvider()), usage.NopRecorder{})
+	handler := NewHandler(cfg, cache.NewMemoryStore(), providers.NewRegistry(nil, providers.NewMockProvider()), nil, usage.NopRecorder{})
 
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
@@ -61,7 +61,7 @@ func TestChatCompletionsMockProvider(t *testing.T) {
 }
 
 func TestChatCompletionsRequiresAgentID(t *testing.T) {
-	handler := NewHandler(Config{APIKey: "test-key"}, cache.NewMemoryStore(), providers.NewRegistry(nil, providers.NewMockProvider()), usage.NopRecorder{})
+	handler := NewHandler(Config{APIKey: "test-key"}, cache.NewMemoryStore(), providers.NewRegistry(nil, providers.NewMockProvider()), nil, usage.NopRecorder{})
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
 

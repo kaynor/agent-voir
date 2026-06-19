@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/agentvoir/agentvoir/services/token-accounting/internal/httputil"
 	"github.com/agentvoir/agentvoir/services/token-accounting/internal/server"
 )
 
@@ -31,7 +32,7 @@ func main() {
 
 	httpServer := &http.Server{
 		Addr:              addr,
-		Handler:           mux,
+		Handler:           httputil.WrapDevCORS(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

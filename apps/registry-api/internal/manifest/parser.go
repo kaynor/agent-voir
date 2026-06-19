@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -13,36 +12,78 @@ const (
 	expectedKind       = "Agent"
 )
 
-var ErrInvalidManifest = errors.New("invalid agent manifest")
-
 // Parse decodes and validates an Agent YAML manifest.
 func Parse(data []byte) (*Document, error) {
-	var doc Document
-	if err := yaml.Unmarshal(data, &doc); err != nil {
+	var root yaml.Node
+	if err := yaml.Unmarshal(data, &root); err != nil {
 		return nil, fmt.Errorf("parse yaml: %w", err)
 	}
-	if err := doc.Validate(); err != nil {
-		return nil, err
+
+	var doc Document
+	if err := root.Decode(&doc); err != nil {
+		return nil, fmt.Errorf("parse yaml: %w", err)
+	}
+
+	lines := fieldLines(&root)
+	if errs := doc.ValidateDetailed(lines); errs.HasIssues() {
+		return nil, errs
 	}
 	return &doc, nil
 }
 
-// Validate checks required manifest fields and supported apiVersion/kind.
-func (d *Document) Validate() error {
+// ValidateDetailed returns structured validation issues for invalid manifests.
+func (d *Document) ValidateDetailed(lines map[string]int) ValidationErrors {
+	var issues []ValidationIssue
+
 	if d.APIVersion != expectedAPIVersion {
-		return fmt.Errorf("%w: apiVersion must be %s", ErrInvalidManifest, expectedAPIVersion)
+		issues = append(issues, issue("apiVersion", fmt.Sprintf("must be %s", expectedAPIVersion), lines["apiVersion"]))
 	}
 	if d.Kind != expectedKind {
-		return fmt.Errorf("%w: kind must be %s", ErrInvalidManifest, expectedKind)
+		issues = append(issues, issue("kind", fmt.Sprintf("must be %s", expectedKind), lines["kind"]))
 	}
 	if strings.TrimSpace(d.Metadata.Name) == "" {
-		return fmt.Errorf("%w: metadata.name is required", ErrInvalidManifest)
+		issues = append(issues, issue("metadata.name", "is required", lines["metadata.name"]))
 	}
 	if strings.TrimSpace(d.Metadata.Version) == "" {
-		return fmt.Errorf("%w: metadata.version is required", ErrInvalidManifest)
+		issues = append(issues, issue("metadata.version", "is required", lines["metadata.version"]))
 	}
 	if strings.TrimSpace(d.Spec.OwnerTeam) == "" {
-		return fmt.Errorf("%w: spec.ownerTeam is required", ErrInvalidManifest)
+		issues = append(issues, issue("spec.ownerTeam", "is required", lines["spec.ownerTeam"]))
 	}
-	return nil
+	if d.Spec.Cache.Mode != "" {
+		switch d.Spec.Cache.Mode {
+		case "off", "exact_only", "write_only":
+		default:
+			issues = append(issues, issue("spec.cache.mode", "must be off, exact_only, or write_only", lines["spec.cache.mode"]))
+		}
+	}
+	return ValidationErrors{Issues: issues}
+}
+
+func fieldLines(root *yaml.Node) map[string]int {
+	lines := make(map[string]int)
+	if root == nil || len(root.Content) == 0 {
+		return lines
+	}
+	docNode := root.Content[0]
+	walkMapping(docNode, "", lines)
+	return lines
+}
+
+func walkMapping(node *yaml.Node, prefix string, lines map[string]int) {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+		valueNode := node.Content[i+1]
+		path := keyNode.Value
+		if prefix != "" {
+			path = prefix + "." + keyNode.Value
+		}
+		lines[path] = keyNode.Line
+		if valueNode.Kind == yaml.MappingNode {
+			walkMapping(valueNode, path, lines)
+		}
+	}
 }

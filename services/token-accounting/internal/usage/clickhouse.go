@@ -199,6 +199,62 @@ func (s *ClickHouseStore) List(ctx context.Context, filter ListFilter) ([]Event,
 	return events, nil
 }
 
+func (s *ClickHouseStore) Summary(ctx context.Context, filter SummaryFilter) (SummaryRollup, error) {
+	clauses := []string{fmt.Sprintf("event_time >= toDateTime64('%s', 3)", filter.Since.UTC().Format("2006-01-02 15:04:05.000"))}
+	if filter.TenantID != "" {
+		clauses = append(clauses, fmt.Sprintf("tenant_id = '%s'", escapeSQL(filter.TenantID)))
+	}
+	if filter.AgentID != "" {
+		clauses = append(clauses, fmt.Sprintf("agent_id = '%s'", escapeSQL(filter.AgentID)))
+	}
+
+	query := fmt.Sprintf(`
+SELECT
+  count() AS event_count,
+  sum(prompt_tokens) AS prompt_tokens,
+  sum(completion_tokens) AS completion_tokens,
+  sum(cost_usd) AS cost_usd,
+  countIf(cache_status = 'hit') AS cache_hits
+FROM %s.usage_events
+WHERE %s
+FORMAT JSON`, s.database, strings.Join(clauses, " AND "))
+
+	body, err := s.query(ctx, query)
+	if err != nil {
+		return SummaryRollup{}, err
+	}
+
+	var response struct {
+		Data []struct {
+			EventCount       int     `json:"event_count,string"`
+			PromptTokens     uint64  `json:"prompt_tokens,string"`
+			CompletionTokens uint64  `json:"completion_tokens,string"`
+			CostUSD          float64 `json:"cost_usd"`
+			CacheHits        int     `json:"cache_hits,string"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return SummaryRollup{}, err
+	}
+	if len(response.Data) == 0 {
+		return SummaryRollup{Period: filter.Period, AgentID: filter.AgentID, TenantID: filter.TenantID}, nil
+	}
+	row := response.Data[0]
+	rollup := SummaryRollup{
+		Period:           filter.Period,
+		AgentID:          filter.AgentID,
+		TenantID:         filter.TenantID,
+		EventCount:       row.EventCount,
+		PromptTokens:     row.PromptTokens,
+		CompletionTokens: row.CompletionTokens,
+		CostUSD:          row.CostUSD,
+	}
+	if row.EventCount > 0 {
+		rollup.CacheHitRate = float64(row.CacheHits) / float64(row.EventCount)
+	}
+	return rollup, nil
+}
+
 func (s *ClickHouseStore) exec(ctx context.Context, query string) error {
 	endpoint := fmt.Sprintf("%s/?query=%s", s.baseURL, url.QueryEscape(query))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(""))

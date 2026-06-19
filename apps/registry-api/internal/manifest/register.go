@@ -29,16 +29,24 @@ type Stores struct {
 // Register creates registry records from a parsed manifest document.
 func Register(stores Stores, doc *Document) (RegistrationResult, error) {
 	agentReq := agents.RegisterRequest{
-		AgentID:     doc.Metadata.Name,
-		Name:        doc.Metadata.Name,
-		Version:     doc.Metadata.Version,
-		OwnerTeam:   doc.Spec.OwnerTeam,
-		CostCenter:  doc.Spec.CostCenter,
-		Environment: doc.Spec.Environment,
-		Framework:   doc.Spec.Framework,
-		RiskLevel:   doc.Spec.RiskLevel,
-		Lifecycle:   doc.Spec.Lifecycle,
-		DataClasses: doc.Spec.DataClasses,
+		AgentID:              doc.Metadata.Name,
+		Name:                 doc.Metadata.Name,
+		Version:              doc.Metadata.Version,
+		OwnerTeam:            doc.Spec.OwnerTeam,
+		CostCenter:           doc.Spec.CostCenter,
+		Environment:          doc.Spec.Environment,
+		Framework:            doc.Spec.Framework,
+		RiskLevel:            doc.Spec.RiskLevel,
+		Lifecycle:            doc.Spec.Lifecycle,
+		CacheMode:            doc.Spec.Cache.Mode,
+		CacheTTLSeconds:      doc.Spec.Cache.TTLSeconds,
+		SemanticCacheAllowed: doc.Spec.Cache.SemanticCacheAllowed,
+		DataClasses:          doc.Spec.DataClasses,
+	}
+
+	agentReq.ApplyDefaults()
+	if err := agents.ValidateLifecycle(agentReq.Lifecycle); err != nil {
+		return RegistrationResult{}, err
 	}
 
 	agent, err := stores.Agents.Create(agentReq)

@@ -15,6 +15,13 @@ func WriteError(w http.ResponseWriter, status int, message string) {
 	WriteJSON(w, status, map[string]string{"error": message})
 }
 
+func WriteValidationErrors(w http.ResponseWriter, status int, message string, issues any) {
+	WriteJSON(w, status, map[string]any{
+		"error":  message,
+		"issues": issues,
+	})
+}
+
 func DecodeJSON(r *http.Request, dst any) error {
 	defer r.Body.Close()
 	return json.NewDecoder(r.Body).Decode(dst)

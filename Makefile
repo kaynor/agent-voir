@@ -78,8 +78,20 @@ quickstart:
 	@chmod +x scripts/quickstart.sh
 	@./scripts/quickstart.sh
 
-db-migrate:
+	db-migrate:
 	cd apps/registry-api && go run ./cmd/migrate
+
+seed-demo:
+	@chmod +x scripts/seed-demo.sh
+	@./scripts/seed-demo.sh
+
+wait-for-onebox:
+	@chmod +x scripts/wait-for-onebox.sh
+	@./scripts/wait-for-onebox.sh
+
+test-migrations:
+	@chmod +x scripts/test-migrations.sh
+	@./scripts/test-migrations.sh
 
 run-gateway:
 	cd apps/gateway && go run ./cmd/gateway

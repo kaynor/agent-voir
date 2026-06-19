@@ -48,3 +48,18 @@ curl "http://localhost:8082/v1/usage-events?agent_id=customer-support-agent&limi
 ```
 
 The gateway emits events automatically when `TOKEN_ACCOUNTING_URL` is configured.
+
+### Cost calculation
+
+When `cost_usd` is omitted or zero, the service estimates cost from a built-in model pricing table using `prompt_tokens`, `completion_tokens`, and `model`.
+
+### Rollup summaries
+
+```bash
+curl "http://localhost:8082/v1/usage-events/summary?period=daily&agent_id=customer-support-agent"
+curl "http://localhost:8082/v1/usage-events/summary?period=monthly&tenant_id=acme"
+```
+
+### Retention
+
+Set `USAGE_RETENTION_DAYS` (default `365`) to document the expected analytics retention window. Automated ClickHouse TTL enforcement is planned for a later phase; operators should configure partition TTL or archival jobs in production ClickHouse clusters.

@@ -9,7 +9,10 @@ import (
 
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/cache"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/gateway"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/metrics"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/middleware"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
+	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
 )
 
@@ -31,15 +34,17 @@ func main() {
 		openaiProvider = providers.NewOpenAIProvider(config.OpenAIAPIKey, config.OpenAIBaseURL)
 	}
 	registry := providers.NewRegistry(openaiProvider, providers.NewMockProvider())
-	handler := gateway.NewHandler(config, cacheStore, registry, usage.NewRecorder(config.TokenAccountingURL))
+	agentRegistry := agentregistry.NewClient(config.RegistryAPIURL)
+	handler := gateway.NewHandler(config, cacheStore, registry, agentRegistry, usage.NewRecorder(config.TokenAccountingURL))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthz)
+	mux.Handle("/metrics", metrics.Handler())
 	handler.RegisterRoutes(mux)
 
 	server := &http.Server{
 		Addr:              config.Addr,
-		Handler:           mux,
+		Handler:           middleware.DevCORS(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

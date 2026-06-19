@@ -3,6 +3,7 @@ package usage
 import (
 	"time"
 
+	"github.com/agentvoir/agentvoir/services/token-accounting/internal/pricing"
 	"github.com/google/uuid"
 )
 
@@ -92,6 +93,9 @@ func (req IngestRequest) Normalize() (Event, string) {
 	}
 	if event.StatusCode == 0 {
 		event.StatusCode = 200
+	}
+	if event.CostUSD == 0 && event.Model != "" {
+		event.CostUSD = pricing.ComputeCostUSD(event.Model, event.PromptTokens, event.CompletionTokens)
 	}
 	return event, ""
 }

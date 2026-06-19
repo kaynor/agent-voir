@@ -125,8 +125,20 @@ After changing ports or version, run `docker compose ... pull` again if you chan
 Wait 30–60 seconds for services to become healthy, then:
 
 ```bash
-chmod +x scripts/onebox-smoke.sh
+After `up -d`, wait for services to become healthy:
+
+```bash
+./scripts/wait-for-onebox.sh
 ./scripts/onebox-smoke.sh
+```
+
+Optionally seed demo agents:
+
+```bash
+./scripts/seed-demo.sh
+```
+
+See [VERIFY.md](./VERIFY.md) for verifying signed release images.
 ```
 
 Or check manually:

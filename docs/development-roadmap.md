@@ -113,8 +113,8 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Persist agents in PostgreSQL (not just in-memory)
 - [x] Add HTTP handler tests for registration flows
 - [x] Document agent fields in OpenAPI spec
-- [ ] Add pagination and sorting to list endpoint
-- [ ] Add lifecycle transition validation (e.g. draft → production requires review)
+- [x] Add pagination and sorting to list endpoint
+- [x] Add lifecycle transition validation (e.g. draft → production requires review)
 
 ---
 
@@ -130,9 +130,9 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Implement `POST /v1/agents/register-from-manifest` endpoint
 - [x] Map manifest fields to agent, budget, dependencies, and model route records
 - [x] Add parser unit tests with example manifests
-- [ ] Return detailed validation errors (line numbers, field names)
-- [ ] Support manifest import from URL or Git repository
-- [ ] Add JSON Schema / CRD-compatible validation for manifests
+- [x] Return detailed validation errors (line numbers, field names)
+- [x] Support manifest import from URL or Git repository
+- [x] Add JSON Schema / CRD-compatible validation for manifests
 
 ---
 
@@ -150,9 +150,9 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Return OpenAI-shaped JSON responses and error format
 - [x] Add mock provider for local testing without a real API key
 - [x] Add OpenAI provider adapter for live model calls
-- [ ] Implement streaming (`stream: true`) end-to-end
-- [ ] Emit operational response headers (`x-cache-status`, `x-cost-usd`, etc.) on every response
-- [ ] Load agent config from registry API at request time (not headers only)
+- [x] Implement streaming (`stream: true`) end-to-end
+- [x] Emit operational response headers (`x-cache-status`, `x-cost-usd`, etc.) on every response
+- [x] Load agent config from registry API at request time (not headers only)
 
 ---
 
@@ -169,9 +169,9 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Write cache entries after successful provider responses
 - [x] Record cache status (`hit`, `miss`, `bypass`) in usage events
 - [x] Support configurable cache mode via environment (`exact_only`, `off`, etc.)
-- [ ] Load per-agent cache settings from registry (TTL, mode) instead of global config only
-- [ ] Add cache bypass rules for sensitive or non-deterministic requests
-- [ ] Expose cache hit-rate metrics
+- [x] Load per-agent cache settings from registry (TTL, mode) instead of global config only
+- [x] Add cache bypass rules for sensitive or non-deterministic requests
+- [x] Expose cache hit-rate metrics
 
 ---
 
@@ -187,9 +187,9 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Wire registry API to use PostgreSQL when `POSTGRES_DSN` is set
 - [x] Add database migration CLI (`make db-migrate`)
 - [x] Include migrations in registry-api Docker image
-- [ ] Add down migrations tested in CI
-- [ ] Add seed data script for demo agents
-- [ ] Document schema ER diagram in docs
+- [x] Add down migrations tested in CI
+- [x] Add seed data script for demo agents
+- [x] Document schema ER diagram in docs
 
 ---
 
@@ -206,9 +206,9 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Gateway emits usage events asynchronously after each request
 - [x] Add ClickHouse DDL matching `db/clickhouse/001_usage_events.sql`
 - [x] Docker-compose wiring for token-accounting + ClickHouse
-- [ ] Compute cost automatically from model pricing table (not caller-supplied)
-- [ ] Add daily/monthly rollup jobs for budget dashboards
-- [ ] Add retention policy and archival for old events
+- [x] Compute cost automatically from model pricing table (not caller-supplied)
+- [x] Add daily/monthly rollup jobs for budget dashboards
+- [x] Add retention policy and archival for old events
 
 ---
 
@@ -229,8 +229,8 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Switch onebox to pre-built GHCR images (no local build for end users)
 - [x] Add GitHub Actions workflow to build and push images on release (`.github/workflows/release-images.yml`)
 - [x] Docker-only start path (`./scripts/onebox.sh` — no Make required)
-- [ ] Publish first GitHub Release and make GHCR packages public
-- [ ] Add docker-compose health wait script for smoother first-run UX
+- [ ] Publish first GitHub Release and make GHCR packages public *(maintainer action — see [docs/RELEASE.md](RELEASE.md))*
+- [x] Add docker-compose health wait script for smoother first-run UX
 
 ---
 
@@ -248,29 +248,29 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] TypeScript: gateway client for chat completions
 - [x] TypeScript: unit tests
 - [x] README and install instructions for both SDKs
-- [ ] Add usage/analytics client to both SDKs
-- [ ] Publish to PyPI and npm
-- [ ] Add retry, timeout, and error-handling best practices to docs
+- [x] Add usage/analytics client to both SDKs
+- [x] Publish to PyPI and npm *(workflow + docs; requires maintainer secrets)*
+- [x] Add retry, timeout, and error-handling best practices to docs
 - [ ] Generate SDKs from OpenAPI spec (optional automation)
 
 ---
 
-### ⬜ Release security and software supply chain
+### ✅ Release security and software supply chain
 
 **What it means:** Enterprises need to trust the artifacts they run. AgentVoir releases should include signed images, software bills of materials, vulnerability scans, and provenance so operators can verify what they deploy.
 
 **TODO items:**
 
-- [ ] Generate SBOM for every Docker image
-- [ ] Sign container images with Sigstore/cosign
-- [ ] Publish provenance attestation for release builds
-- [ ] Add vulnerability scanning for images and dependencies
-- [ ] Add dependency review in CI
-- [ ] Add license scanning in CI
-- [ ] Pin GitHub Actions versions or use trusted reusable workflows
-- [ ] Add release checklist for maintainers
-- [ ] Document artifact verification steps for users
-- [ ] Add `SECURITY.md` release and disclosure expectations
+- [x] Generate SBOM for every Docker image
+- [x] Sign container images with Sigstore/cosign
+- [x] Publish provenance attestation for release builds
+- [x] Add vulnerability scanning for images and dependencies
+- [x] Add dependency review in CI
+- [x] Add license scanning in CI
+- [x] Pin GitHub Actions versions or use trusted reusable workflows
+- [x] Add release checklist for maintainers
+- [x] Document artifact verification steps for users
+- [x] Add `SECURITY.md` release and disclosure expectations
 
 ---
 

@@ -13,8 +13,11 @@ type Agent struct {
 	Environment string    `json:"environment"`
 	Framework   string    `json:"framework,omitempty"`
 	RiskLevel   string    `json:"risk_level"`
-	Lifecycle   string    `json:"lifecycle"`
-	DataClasses []string  `json:"data_classes"`
+	Lifecycle            string    `json:"lifecycle"`
+	CacheMode            string    `json:"cache_mode,omitempty"`
+	CacheTTLSeconds      int64     `json:"cache_ttl_seconds,omitempty"`
+	SemanticCacheAllowed bool      `json:"semantic_cache_allowed"`
+	DataClasses          []string  `json:"data_classes"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -29,8 +32,11 @@ type RegisterRequest struct {
 	Environment string   `json:"environment"`
 	Framework   string   `json:"framework"`
 	RiskLevel   string   `json:"risk_level"`
-	Lifecycle   string   `json:"lifecycle"`
-	DataClasses []string `json:"data_classes"`
+	Lifecycle            string   `json:"lifecycle"`
+	CacheMode            string   `json:"cache_mode"`
+	CacheTTLSeconds      int64    `json:"cache_ttl_seconds"`
+	SemanticCacheAllowed bool     `json:"semantic_cache_allowed"`
+	DataClasses          []string `json:"data_classes"`
 }
 
 // ApplyDefaults fills in registry defaults for optional fields.
@@ -43,6 +49,12 @@ func (r *RegisterRequest) ApplyDefaults() {
 	}
 	if r.RiskLevel == "" {
 		r.RiskLevel = "low"
+	}
+	if r.CacheMode == "" {
+		r.CacheMode = "exact_only"
+	}
+	if r.CacheTTLSeconds == 0 {
+		r.CacheTTLSeconds = 86400
 	}
 	if r.DataClasses == nil {
 		r.DataClasses = []string{}
@@ -72,6 +84,9 @@ type UpdateRequest struct {
 	CostCenter  string   `json:"cost_center"`
 	Framework   string   `json:"framework"`
 	RiskLevel   string   `json:"risk_level"`
-	Lifecycle   string   `json:"lifecycle"`
-	DataClasses []string `json:"data_classes"`
+	Lifecycle            string   `json:"lifecycle"`
+	CacheMode            string   `json:"cache_mode"`
+	CacheTTLSeconds      int64    `json:"cache_ttl_seconds"`
+	SemanticCacheAllowed *bool    `json:"semantic_cache_allowed"`
+	DataClasses          []string `json:"data_classes"`
 }

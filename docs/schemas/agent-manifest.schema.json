@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentvoir.dev/schemas/agent-manifest.schema.json",
+  "title": "AgentVoir Agent Manifest",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "agentvoir.dev/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "Agent"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "required": ["ownerTeam"],
+      "properties": {
+        "ownerTeam": { "type": "string", "minLength": 1 },
+        "costCenter": { "type": "string" },
+        "environment": { "type": "string" },
+        "framework": { "type": "string" },
+        "riskLevel": { "type": "string" },
+        "lifecycle": {
+          "type": "string",
+          "enum": ["draft", "review", "staging", "production", "deprecated", "retired"]
+        },
+        "dataClasses": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "models": {
+          "type": "object",
+          "properties": {
+            "primary": { "$ref": "#/$defs/modelRef" },
+            "fallback": { "$ref": "#/$defs/modelRef" }
+          }
+        },
+        "cache": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["off", "exact_only", "write_only"]
+            },
+            "ttlSeconds": { "type": "integer", "minimum": 0 },
+            "semanticCacheAllowed": { "type": "boolean" }
+          }
+        },
+        "budget": {
+          "type": "object",
+          "properties": {
+            "monthlyUsd": { "type": "number", "minimum": 0 },
+            "maxPromptTokensPerRequest": { "type": "integer", "minimum": 0 },
+            "maxCompletionTokensPerRequest": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "tools": { "type": "array", "items": { "type": "string" } },
+            "apis": { "type": "array", "items": { "type": "string" } },
+            "vectorStores": { "type": "array", "items": { "type": "string" } },
+            "agents": { "type": "array", "items": { "type": "string" } },
+            "mcpServers": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "modelRef": {
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string" },
+        "model": { "type": "string" }
+      }
+    }
+  }
+}

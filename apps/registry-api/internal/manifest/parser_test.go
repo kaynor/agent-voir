@@ -1,6 +1,7 @@
 package manifest_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,6 +32,28 @@ func TestParseExampleManifest(t *testing.T) {
 	}
 	if len(doc.Spec.Dependencies.Tools) != 2 {
 		t.Fatalf("tools = %d, want 2", len(doc.Spec.Dependencies.Tools))
+	}
+}
+
+func TestParseValidationErrors(t *testing.T) {
+	yaml := []byte(`apiVersion: wrong/v1
+kind: Agent
+metadata:
+  name: ""
+  version: ""
+spec:
+  ownerTeam: ""
+`)
+	_, err := manifest.Parse(yaml)
+	if err == nil {
+		t.Fatal("expected validation error")
+	}
+	var validation manifest.ValidationErrors
+	if !errors.As(err, &validation) {
+		t.Fatalf("expected ValidationErrors, got %T: %v", err, err)
+	}
+	if len(validation.Issues) < 3 {
+		t.Fatalf("issues = %d, want at least 3", len(validation.Issues))
 	}
 }
 

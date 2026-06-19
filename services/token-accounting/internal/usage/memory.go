@@ -52,3 +52,37 @@ func (s *MemoryStore) List(_ context.Context, filter ListFilter) ([]Event, error
 	}
 	return matches, nil
 }
+
+func (s *MemoryStore) Summary(_ context.Context, filter SummaryFilter) (SummaryRollup, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	rollup := SummaryRollup{
+		Period:   filter.Period,
+		AgentID:  filter.AgentID,
+		TenantID: filter.TenantID,
+	}
+	var hits int
+	for _, event := range s.events {
+		if event.EventTime.Before(filter.Since) {
+			continue
+		}
+		if filter.TenantID != "" && event.TenantID != filter.TenantID {
+			continue
+		}
+		if filter.AgentID != "" && event.AgentID != filter.AgentID {
+			continue
+		}
+		rollup.EventCount++
+		rollup.PromptTokens += event.PromptTokens
+		rollup.CompletionTokens += event.CompletionTokens
+		rollup.CostUSD += event.CostUSD
+		if event.CacheStatus == "hit" {
+			hits++
+		}
+	}
+	if rollup.EventCount > 0 {
+		rollup.CacheHitRate = float64(hits) / float64(rollup.EventCount)
+	}
+	return rollup, nil
+}

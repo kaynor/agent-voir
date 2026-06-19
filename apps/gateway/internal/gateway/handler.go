@@ -8,30 +8,41 @@ import (
 	"time"
 
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/cache"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/metrics"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/middleware"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/openai"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/pricing"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
+	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
 	"github.com/google/uuid"
 )
 
 // Handler serves OpenAI-compatible gateway endpoints.
 type Handler struct {
-	config   Config
-	cache    cache.Store
-	registry *providers.Registry
-	usage    usage.Recorder
+	config        Config
+	cache         cache.Store
+	providers     *providers.Registry
+	agentRegistry *agentregistry.Client
+	usage         usage.Recorder
 }
 
-func NewHandler(config Config, cacheStore cache.Store, registry *providers.Registry, usageRecorder usage.Recorder) *Handler {
+func NewHandler(
+	config Config,
+	cacheStore cache.Store,
+	providerRegistry *providers.Registry,
+	agentRegistry *agentregistry.Client,
+	usageRecorder usage.Recorder,
+) *Handler {
 	if usageRecorder == nil {
 		usageRecorder = usage.NopRecorder{}
 	}
 	return &Handler{
-		config:   config,
-		cache:    cacheStore,
-		registry: registry,
-		usage:    usageRecorder,
+		config:        config,
+		cache:         cacheStore,
+		providers:     providerRegistry,
+		agentRegistry: agentRegistry,
+		usage:         usageRecorder,
 	}
 }
 
@@ -56,12 +67,21 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 	if agentVersion == "" {
 		agentVersion = "0.1.0"
 	}
+	environment := strings.TrimSpace(r.Header.Get(middleware.HeaderAgentEnvironment))
+	if environment == "" {
+		environment = "dev"
+	}
 
 	var req openai.ChatCompletionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.recordUsage(r, started, "", agentID, agentVersion, "", "", "bypass", 0, 0, 0, http.StatusBadRequest, "invalid_json")
 		writeOpenAIError(w, http.StatusBadRequest, "invalid_request_error", "invalid JSON body")
 		return
+	}
+
+	agentCfg := h.loadAgentConfig(r, agentID, agentVersion, environment)
+	if agentCfg.PrimaryModel != "" && req.Model == "" {
+		req.Model = agentCfg.PrimaryModel
 	}
 	if req.Model == "" {
 		h.recordUsage(r, started, "", agentID, agentVersion, "", "", "bypass", 0, 0, 0, http.StatusBadRequest, "missing_model")
@@ -74,31 +94,41 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Stream {
-		h.streamChatCompletions(w, r, started, agentID, agentVersion, req)
+		h.streamChatCompletions(w, r, started, agentID, agentVersion, agentCfg, req)
 		return
 	}
 
 	traceID := uuid.NewString()
 	cacheStatus := "miss"
+	bypass := cache.ShouldBypass(r, agentCfg, req)
+	if bypass {
+		cacheStatus = "bypass"
+		metrics.RecordCacheBypass()
+	}
+
 	var raw []byte
 	var providerResp *providers.ChatResponse
 
-	if h.config.CacheReadEnabled() {
+	if !bypass && cache.CacheReadEnabled(agentCfg, h.config.CacheMode) {
 		key := cache.ExactKey(agentID, agentVersion, req)
 		if entry, err := h.cache.Get(r.Context(), key); err == nil && entry != nil {
 			cacheStatus = "hit"
+			metrics.RecordCacheHit()
 			raw = entry.Value
-			w.Header().Set(middleware.HeaderCacheStatus, cacheStatus)
 			h.writeOperationalHeaders(w, agentID, agentVersion, "cache", req.Model, 0, 0, 0, traceID)
+			w.Header().Set(middleware.HeaderCacheStatus, cacheStatus)
 			h.recordUsage(r, started, traceID, agentID, agentVersion, "cache", req.Model, cacheStatus, 0, 0, 0, http.StatusOK, "")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write(raw)
 			return
 		}
+		metrics.RecordCacheMiss()
+	} else if !bypass {
+		metrics.RecordCacheMiss()
 	}
 
-	provider := h.registry.Resolve(req.Model)
+	provider := h.providers.Resolve(req.Model)
 	providerReq := providers.ChatRequest{
 		Model:    req.Model,
 		Messages: toProviderMessages(req.Messages),
@@ -112,13 +142,21 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	raw = providerResp.Raw
+	costUSD := providerResp.CostUSD
+	if costUSD == 0 {
+		costUSD = pricing.ComputeCostUSD(providerResp.Model, providerResp.PromptTokens, providerResp.CompletionTokens)
+	}
 
-	if h.config.CacheWriteEnabled() {
+	cacheTTL := h.config.CacheTTLSeconds
+	if agentCfg.CacheTTLSeconds > 0 {
+		cacheTTL = agentCfg.CacheTTLSeconds
+	}
+	if !bypass && cache.CacheWriteEnabled(agentCfg, h.config.CacheMode) {
 		key := cache.ExactKey(agentID, agentVersion, req)
 		_ = h.cache.Set(r.Context(), cache.Entry{
 			Key:         key,
 			Value:       raw,
-			TTLSeconds:  h.config.CacheTTLSeconds,
+			TTLSeconds:  cacheTTL,
 			CacheStatus: cacheStatus,
 			AgentID:     agentID,
 		})
@@ -132,7 +170,7 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		providerResp.Model,
 		providerResp.PromptTokens,
 		providerResp.CompletionTokens,
-		providerResp.CostUSD,
+		costUSD,
 		traceID,
 	)
 	w.Header().Set(middleware.HeaderCacheStatus, cacheStatus)
@@ -147,7 +185,7 @@ func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 		cacheStatus,
 		providerResp.PromptTokens,
 		providerResp.CompletionTokens,
-		providerResp.CostUSD,
+		costUSD,
 		http.StatusOK,
 		"",
 	)
@@ -161,9 +199,11 @@ func (h *Handler) streamChatCompletions(
 	r *http.Request,
 	started time.Time,
 	agentID, agentVersion string,
+	agentCfg agentregistry.AgentConfig,
 	req openai.ChatCompletionRequest,
 ) {
-	provider := h.registry.Resolve(req.Model)
+	metrics.RecordCacheBypass()
+	provider := h.providers.Resolve(req.Model)
 	providerReq := providers.ChatRequest{
 		Model:    req.Model,
 		Messages: toProviderMessages(req.Messages),
@@ -188,6 +228,11 @@ func (h *Handler) streamChatCompletions(
 		content = completion.Choices[0].Message.Content
 	}
 
+	costUSD := resp.CostUSD
+	if costUSD == 0 {
+		costUSD = pricing.ComputeCostUSD(resp.Model, resp.PromptTokens, resp.CompletionTokens)
+	}
+
 	traceID := uuid.NewString()
 	h.writeOperationalHeaders(
 		w,
@@ -197,7 +242,7 @@ func (h *Handler) streamChatCompletions(
 		resp.Model,
 		resp.PromptTokens,
 		resp.CompletionTokens,
-		resp.CostUSD,
+		costUSD,
 		traceID,
 	)
 	w.Header().Set(middleware.HeaderCacheStatus, "bypass")
@@ -212,10 +257,11 @@ func (h *Handler) streamChatCompletions(
 		"bypass",
 		resp.PromptTokens,
 		resp.CompletionTokens,
-		resp.CostUSD,
+		costUSD,
 		http.StatusOK,
 		"",
 	)
+	_ = agentCfg // registry config influences bypass via caller; stream always bypasses cache
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -374,4 +420,21 @@ func toProviderMessages(messages []openai.ChatMessage) []providers.ChatMessage {
 		out[i] = providers.ChatMessage{Role: msg.Role, Content: msg.Content}
 	}
 	return out
+}
+
+func (h *Handler) loadAgentConfig(r *http.Request, agentID, version, environment string) agentregistry.AgentConfig {
+	if h.agentRegistry == nil {
+		return agentregistry.AgentConfig{
+			CacheMode:       h.config.CacheMode,
+			CacheTTLSeconds: h.config.CacheTTLSeconds,
+		}
+	}
+	cfg, err := h.agentRegistry.GetAgentConfig(r.Context(), agentID, version, environment)
+	if err != nil {
+		return agentregistry.AgentConfig{
+			CacheMode:       h.config.CacheMode,
+			CacheTTLSeconds: h.config.CacheTTLSeconds,
+		}
+	}
+	return cfg
 }

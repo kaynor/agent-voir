@@ -1,8 +1,15 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: AgentVoir Registry API
   version: 0.1.0
   description: Control-plane registry for agents, prompts, dependencies, budgets, and model routes.
+servers:
+  - url: http://localhost:8081
+    description: Local onebox / dev stack
+  - url: http://127.0.0.1:8081
+    description: Local onebox (127.0.0.1)
+  - url: http://localhost:18081
+    description: Custom port (set AGENTVOIR_REGISTRY_PORT)
 paths:
   /healthz:
     get:
@@ -14,9 +21,34 @@ paths:
   /v1/agents:
     get:
       summary: List agents
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, agent_id, name]
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: environment
+          in: query
+          schema:
+            type: string
       responses:
         '200':
-          description: Agent list
+          description: Paginated agent list
     post:
       summary: Register an agent
       responses:
@@ -254,3 +286,24 @@ paths:
           description: Invalid manifest
         '409':
           description: Agent already exists
+
+  /v1/agents/from-manifest-url:
+    post:
+      summary: Fetch and register an agent manifest from a URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+      responses:
+        '201':
+          description: Registered agent and related resources
+        '400':
+          description: Invalid URL or manifest
+

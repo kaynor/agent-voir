@@ -14,7 +14,7 @@ var ErrNotFound = errors.New("agent not found")
 
 // Store persists registered agents.
 type Store interface {
-	List() []Agent
+	List(opts ListOptions) ListResult
 	Get(agentID, version, environment string) (Agent, bool)
 	Create(req RegisterRequest) (Agent, error)
 	Update(agentID, version, environment string, req UpdateRequest) (Agent, error)
@@ -35,15 +35,33 @@ func storeKey(agentID, version, environment string) string {
 	return fmt.Sprintf("%s:%s:%s", agentID, version, environment)
 }
 
-func (s *MemoryStore) List() []Agent {
+func (s *MemoryStore) List(opts ListOptions) ListResult {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	out := make([]Agent, 0, len(s.agents))
+	items := make([]Agent, 0, len(s.agents))
 	for _, agent := range s.agents {
-		out = append(out, agent)
+		if opts.Environment != "" && agent.Environment != opts.Environment {
+			continue
+		}
+		items = append(items, agent)
 	}
-	return out
+
+	sortAgents(items, opts.SortBy, opts.SortOrder)
+	total := len(items)
+	if opts.Offset >= total {
+		return ListResult{Items: []Agent{}, Total: total, Limit: opts.Limit, Offset: opts.Offset}
+	}
+	end := opts.Offset + opts.Limit
+	if end > total {
+		end = total
+	}
+	return ListResult{
+		Items:  append([]Agent(nil), items[opts.Offset:end]...),
+		Total:  total,
+		Limit:  opts.Limit,
+		Offset: opts.Offset,
+	}
 }
 
 func (s *MemoryStore) Get(agentID, version, environment string) (Agent, bool) {
@@ -68,19 +86,22 @@ func (s *MemoryStore) Create(req RegisterRequest) (Agent, error) {
 	}
 
 	agent := Agent{
-		ID:          uuid.NewString(),
-		AgentID:     req.AgentID,
-		Name:        req.Name,
-		Version:     req.Version,
-		OwnerTeam:   req.OwnerTeam,
-		CostCenter:  req.CostCenter,
-		Environment: req.Environment,
-		Framework:   req.Framework,
-		RiskLevel:   req.RiskLevel,
-		Lifecycle:   req.Lifecycle,
-		DataClasses: append([]string(nil), req.DataClasses...),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:                   uuid.NewString(),
+		AgentID:              req.AgentID,
+		Name:                 req.Name,
+		Version:              req.Version,
+		OwnerTeam:            req.OwnerTeam,
+		CostCenter:           req.CostCenter,
+		Environment:          req.Environment,
+		Framework:            req.Framework,
+		RiskLevel:            req.RiskLevel,
+		Lifecycle:            req.Lifecycle,
+		CacheMode:            req.CacheMode,
+		CacheTTLSeconds:      req.CacheTTLSeconds,
+		SemanticCacheAllowed: req.SemanticCacheAllowed,
+		DataClasses:          append([]string(nil), req.DataClasses...),
+		CreatedAt:            now,
+		UpdatedAt:            now,
 	}
 	s.agents[key] = agent
 	return agent, nil
@@ -118,6 +139,15 @@ func (s *MemoryStore) Update(agentID, version, environment string, req UpdateReq
 	}
 	if req.Lifecycle != "" {
 		existing.Lifecycle = req.Lifecycle
+	}
+	if req.CacheMode != "" {
+		existing.CacheMode = req.CacheMode
+	}
+	if req.CacheTTLSeconds > 0 {
+		existing.CacheTTLSeconds = req.CacheTTLSeconds
+	}
+	if req.SemanticCacheAllowed != nil {
+		existing.SemanticCacheAllowed = *req.SemanticCacheAllowed
 	}
 	if req.DataClasses != nil {
 		existing.DataClasses = append([]string(nil), req.DataClasses...)

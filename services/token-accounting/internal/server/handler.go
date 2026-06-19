@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/agentvoir/agentvoir/services/token-accounting/internal/httputil"
 	"github.com/agentvoir/agentvoir/services/token-accounting/internal/usage"
@@ -21,6 +22,7 @@ func NewHandler(store usage.Store) *Handler {
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/usage-events", h.ingestEvent)
 	mux.HandleFunc("GET /v1/usage-events", h.listEvents)
+	mux.HandleFunc("GET /v1/usage-events/summary", h.summarizeEvents)
 }
 
 func (h *Handler) ingestEvent(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +71,35 @@ func (h *Handler) listEvents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httputil.WriteJSON(w, http.StatusOK, events)
+}
+
+func (h *Handler) summarizeEvents(w http.ResponseWriter, r *http.Request) {
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = "daily"
+	}
+
+	since := time.Now().UTC().Add(-24 * time.Hour)
+	switch period {
+	case "monthly":
+		since = time.Now().UTC().AddDate(0, -1, 0)
+	case "daily":
+	default:
+		httputil.WriteError(w, http.StatusBadRequest, "period must be daily or monthly")
+		return
+	}
+
+	rollup, err := h.store.Summary(r.Context(), usage.SummaryFilter{
+		Period:   period,
+		AgentID:  r.URL.Query().Get("agent_id"),
+		TenantID: r.URL.Query().Get("tenant_id"),
+		Since:    since,
+	})
+	if err != nil {
+		httputil.WriteError(w, http.StatusInternalServerError, "failed to summarize usage events")
+		return
+	}
+	httputil.WriteJSON(w, http.StatusOK, rollup)
 }
 
 // OpenStore connects to ClickHouse when configured, otherwise uses memory storage.

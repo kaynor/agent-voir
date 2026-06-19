@@ -24,8 +24,15 @@ type Spec struct {
 	DataClasses []string     `yaml:"dataClasses" json:"data_classes"`
 	Lifecycle   string       `yaml:"lifecycle" json:"lifecycle"`
 	Models      Models       `yaml:"models" json:"models"`
+	Cache       Cache        `yaml:"cache" json:"cache"`
 	Budget      Budget       `yaml:"budget" json:"budget"`
 	Dependencies Dependencies `yaml:"dependencies" json:"dependencies"`
+}
+
+type Cache struct {
+	Mode                 string `yaml:"mode" json:"mode"`
+	TTLSeconds           int64  `yaml:"ttlSeconds" json:"ttl_seconds"`
+	SemanticCacheAllowed bool   `yaml:"semanticCacheAllowed" json:"semantic_cache_allowed"`
 }
 
 type Models struct {

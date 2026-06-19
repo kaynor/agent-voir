@@ -6,4 +6,5 @@ import "context"
 type Store interface {
 	Insert(ctx context.Context, event Event) error
 	List(ctx context.Context, filter ListFilter) ([]Event, error)
+	Summary(ctx context.Context, filter SummaryFilter) (SummaryRollup, error)
 }
