@@ -128,6 +128,17 @@ services:
       token-accounting:
         condition: service_started
 
+  api-docs:
+    profiles: ["docs"]
+    image: swaggerapi/swagger-ui:v5.17.14
+    ports:
+      - "8089:8080"
+    environment:
+      URLS: '[{"url":"/specs/openapi.yaml","name":"Registry API"},{"url":"/specs/gateway-openapi.yaml","name":"Gateway API"},{"url":"/specs/token-accounting-openapi.yaml","name":"Token accounting"}]'
+      URLS_PRIMARY_NAME: Registry API
+    volumes:
+      - ../../docs/api:/usr/share/nginx/html/specs:ro
+
 volumes:
   agentvoir-postgres:
   agentvoir-redis:

@@ -1,0 +1,78 @@
+openapi: 3.1.0
+info:
+  title: AgentVoir Token Accounting API
+  version: 0.1.0
+  description: Usage event ingestion and query service.
+servers:
+  - url: http://localhost:8082
+    description: Local onebox token-accounting
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /v1/usage-events:
+    get:
+      summary: List recent usage events
+      parameters:
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: tenant_id
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Usage event list
+    post:
+      summary: Ingest a usage event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsageEvent'
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Invalid event
+components:
+  schemas:
+    UsageEvent:
+      type: object
+      required: [agent_id, model]
+      properties:
+        trace_id:
+          type: string
+        tenant_id:
+          type: string
+        agent_id:
+          type: string
+        agent_version:
+          type: string
+        provider:
+          type: string
+        model:
+          type: string
+        cache_status:
+          type: string
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        cost_usd:
+          type: number
+        latency_ms:
+          type: integer
+        status_code:
+          type: integer

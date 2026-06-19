@@ -29,6 +29,19 @@ make lint
 make test
 ```
 
+See [docs/AI_CONTRIBUTION_POLICY.md](docs/AI_CONTRIBUTION_POLICY.md) for AI-assisted contribution rules.
+
+### GitHub labels and backlog issues
+
+Maintainers can seed labels and starter issues (requires [GitHub CLI](https://cli.github.com/)):
+
+```bash
+./scripts/bootstrap-github-labels.sh
+./scripts/bootstrap-github-issues.sh
+```
+
+Issue templates: bug report, feature request, and **AI coding task** under `.github/ISSUE_TEMPLATE/`.
+
 ## Areas for contribution
 
 - Gateway provider adapters

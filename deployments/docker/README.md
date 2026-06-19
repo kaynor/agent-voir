@@ -10,6 +10,7 @@
 cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 ./scripts/onebox.sh
 ./scripts/onebox-smoke.sh
+./scripts/quickstart.sh    # full demo: agent + cache + usage
 ```
 
 Uses `deployments/docker/docker-compose.onebox.yml` with project name `agentvoir-onebox`.

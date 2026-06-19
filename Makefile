@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help dev-up dev-up-all dev-down dev-logs onebox-up onebox-up-build onebox-down onebox-logs onebox-reset onebox-smoke run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean
+.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean
 
 ONEBOX_COMPOSE := deployments/docker/docker-compose.onebox.yml
 ONEBOX_BUILD_COMPOSE := deployments/docker/docker-compose.onebox.build.yml
@@ -14,6 +14,8 @@ help:
 	@echo "  make onebox-logs          Follow onebox stack logs"
 	@echo "  make onebox-reset         Stop onebox stack and delete onebox volumes"
 	@echo "  make onebox-smoke         Run health checks against onebox stack"
+	@echo "  make quickstart           End-to-end demo (onebox + agent + cache + usage)"
+	@echo "  make dev-docs             Start local Swagger UI for API specs (:8089)"
 	@echo "  make dev-up               Start local infrastructure (Postgres, Redis, ClickHouse, ...)"
 	@echo "  make dev-up-all           Start infrastructure + AgentVoir apps in Docker"
 	@echo "  make dev-down             Stop Docker Compose services"
@@ -39,6 +41,9 @@ dev-down:
 
 dev-logs:
 	docker compose -f deployments/docker/docker-compose.yml --profile apps logs -f
+
+dev-docs:
+	docker compose -f deployments/docker/docker-compose.yml --profile docs up -d
 
 onebox-up:
 	@cp -n deployments/docker/.env.onebox.example $(ONEBOX_ENV) || true
@@ -68,6 +73,10 @@ onebox-smoke:
 	echo "==> usage /healthz" && curl -fsS "http://localhost:$$USAGE_PORT/healthz" && echo && \
 	echo "==> gateway /healthz" && curl -fsS "http://localhost:$$GATEWAY_PORT/healthz" && echo && \
 	echo "==> gateway /v1/models" && curl -fsS "http://localhost:$$GATEWAY_PORT/v1/models" -H "Authorization: Bearer $$API_KEY" | head -c 200 && echo
+
+quickstart:
+	@chmod +x scripts/quickstart.sh
+	@./scripts/quickstart.sh
 
 db-migrate:
 	cd apps/registry-api && go run ./cmd/migrate

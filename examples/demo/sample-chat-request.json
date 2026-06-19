@@ -1,0 +1,10 @@
+{
+  "model": "gpt-4.1-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Summarize this support ticket in two bullet points: Customer cannot reset password; error code AUTH-429."
+    }
+  ],
+  "temperature": 0
+}

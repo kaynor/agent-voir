@@ -26,66 +26,70 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 ---
 
-### ⬜ Quickstart smoke test
+### ✅ Quickstart smoke test
 
 **What it means:** A single command should prove that the core AgentVoir flow works end-to-end: start the stack, register a demo agent, call the gateway, observe cache behavior, and show a usage event.
 
 **TODO items:**
 
-- [ ] Add `./scripts/quickstart.sh`
-- [ ] Start the onebox Docker stack from the script
-- [ ] Register a demo `customer-support-agent`
-- [ ] Send a sample chat completion through the gateway
-- [ ] Show first request as cache miss and repeated request as cache hit
-- [ ] Print usage event summary after the request
-- [ ] Add quickstart output examples to README
-- [ ] Add troubleshooting section for ports, Docker, and missing API keys
+- [x] Add `./scripts/quickstart.sh`
+- [x] Start the onebox Docker stack from the script
+- [x] Register a demo `customer-support-agent`
+- [x] Send a sample chat completion through the gateway
+- [x] Show first request as cache miss and repeated request as cache hit
+- [x] Print usage event summary after the request
+- [x] Add quickstart output examples to README
+- [x] Add troubleshooting section for ports, Docker, and missing API keys
 
 ---
 
-### ⬜ Public demo scenario
+### ✅ Public demo scenario
 
 **What it means:** A small, realistic demo helps users understand why AgentVoir exists before they read the full architecture.
 
 **TODO items:**
 
-- [ ] Create `examples/agents/customer-support-agent.yaml`
-- [ ] Include sample prompt, model route, budget, cache policy, and dependencies
-- [ ] Include a sample LLM request and response
-- [ ] Include a sample policy denial scenario
-- [ ] Include screenshot or terminal output in README
-- [ ] Add "demo walk-through" documentation under `docs/demo/`
+- [x] Create `examples/agents/customer-support-agent.yaml`
+- [x] Include sample prompt, model route, budget, cache policy, and dependencies
+- [x] Include a sample LLM request and response
+- [x] Include a sample policy denial scenario
+- [x] Include screenshot or terminal output in README
+- [x] Add "demo walk-through" documentation under `docs/demo/`
 
 ---
 
-### ⬜ Contribution-ready issue backlog
+### ✅ Contribution-ready issue backlog
 
 **What it means:** New contributors should be able to find scoped tasks quickly, and AI-assisted coding workflows should have well-structured issues to consume.
 
 **TODO items:**
 
-- [ ] Create labeled GitHub issues for gateway, registry-api, SDK, docs, security, and observability
-- [ ] Add `good-first-issue` and `help-wanted` labels to approachable tasks
-- [ ] Add issue templates for bug reports, feature requests, and AI coding tasks
-- [ ] Add pull request template with AI-assistance disclosure
-- [ ] Add `docs/AI_CONTRIBUTION_POLICY.md`
-- [ ] Add architecture decision records under `docs/adr/`
-- [ ] Add `CODEOWNERS` for key modules
+- [x] Create labeled GitHub issues for gateway, registry-api, SDK, docs, security, and observability
+- [x] Add `good-first-issue` and `help-wanted` labels to approachable tasks
+- [x] Add issue templates for bug reports, feature requests, and AI coding tasks
+- [x] Add pull request template with AI-assistance disclosure
+- [x] Add `docs/AI_CONTRIBUTION_POLICY.md`
+- [x] Add architecture decision records under `docs/adr/`
+- [x] Add `CODEOWNERS` for key modules
+
+Run `./scripts/bootstrap-github-labels.sh` and `./scripts/bootstrap-github-issues.sh` to apply labels and seed issues on GitHub.
 
 ---
 
-### ⬜ API documentation portal
+### ✅ API documentation portal
 
 **What it means:** Users should be able to explore AgentVoir APIs without reading source code.
 
 **TODO items:**
 
-- [ ] Generate OpenAPI spec for registry API
-- [ ] Generate OpenAPI spec for gateway API extensions
-- [ ] Publish Swagger UI or Redoc locally in the Docker stack
-- [ ] Add API docs to GitHub Pages
-- [ ] Add examples for authentication, agent registration, gateway calls, usage queries, and policy simulation
-- [ ] Add SDK examples that map to each API section
+- [x] Generate OpenAPI spec for registry API
+- [x] Generate OpenAPI spec for gateway API extensions
+- [x] Publish Swagger UI or Redoc locally in the Docker stack
+- [x] Add API docs to GitHub Pages
+- [x] Add examples for authentication, agent registration, gateway calls, usage queries, and policy simulation
+- [x] Add SDK examples that map to each API section
+
+Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --profile docs up -d` → http://localhost:8089
 
 ---
 

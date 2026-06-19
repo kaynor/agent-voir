@@ -1,0 +1,22 @@
+{
+  "input": {
+    "agent": {
+      "lifecycle": "draft",
+      "policies": {
+        "allowedProviders": ["openai", "anthropic"],
+        "piiAllowed": true
+      },
+      "cache": {
+        "mode": "exact_only",
+        "semanticCacheAllowed": false
+      },
+      "dataClasses": ["customer_pii"]
+    },
+    "request": {
+      "provider": "openai",
+      "contains_pii": false,
+      "contains_secret": false
+    },
+    "environment": "production"
+  }
+}

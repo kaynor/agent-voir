@@ -1,0 +1,117 @@
+openapi: 3.1.0
+info:
+  title: AgentVoir Gateway API
+  version: 0.1.0
+  description: |
+    OpenAI-compatible LLM gateway with AgentVoir operational extensions.
+    See also the [Registry API](openapi.yaml).
+servers:
+  - url: http://localhost:8080
+    description: Local onebox gateway
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Gateway is healthy
+  /v1/models:
+    get:
+      summary: List models (OpenAI-compatible)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Model list
+        '401':
+          description: Invalid API key
+  /v1/chat/completions:
+    post:
+      summary: Create chat completion (OpenAI-compatible)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: x-agent-id
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Agent identity for governance and usage attribution
+        - name: x-agent-version
+          in: header
+          schema:
+            type: string
+        - name: x-tenant-id
+          in: header
+          schema:
+            type: string
+        - name: x-user-id
+          in: header
+          schema:
+            type: string
+        - name: x-trace-id
+          in: header
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: Chat completion response
+          headers:
+            x-cache-status:
+              schema:
+                type: string
+                enum: [hit, miss, bypass]
+            x-agent-id:
+              schema:
+                type: string
+            x-model-used:
+              schema:
+                type: string
+            x-cost-usd:
+              schema:
+                type: string
+            x-trace-id:
+              schema:
+                type: string
+        '400':
+          description: Invalid request (missing agent id, model, or messages)
+        '401':
+          description: Invalid API key
+        '502':
+          description: Upstream provider error
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ChatCompletionRequest:
+      type: object
+      required: [model, messages]
+      properties:
+        model:
+          type: string
+          example: gpt-4.1-mini
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        temperature:
+          type: number
+        stream:
+          type: boolean
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+        content:
+          type: string

@@ -175,6 +175,36 @@ cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 ./scripts/onebox-smoke.sh
 ```
 
+**End-to-end demo** (register agent, cache miss → hit, usage events):
+
+```bash
+chmod +x scripts/quickstart.sh
+./scripts/quickstart.sh
+```
+
+Example quickstart output:
+
+```text
+==> Registering demo agent from manifest
+    Registered customer-support-agent (201 Created)
+==> Gateway chat completion — first request (expect cache miss)
+    x-cache-status: miss
+==> Gateway chat completion — second request (expect cache hit)
+    x-cache-status: hit
+    Cache behavior: OK (miss → hit)
+```
+
+Walkthrough: [docs/demo/README.md](docs/demo/README.md) · API docs: [docs/api/README.md](docs/api/README.md)
+
+**Quick try troubleshooting**
+
+| Problem | Fix |
+| ------- | --- |
+| `docker pull` fails | Set `AGENTVOIR_VERSION` to a [Release](https://github.com/kaynor/agent-voir/releases) tag; make GHCR packages public |
+| Port already in use | Change `AGENTVOIR_*_PORT` in `deployments/docker/.env.onebox` |
+| Services not ready | Wait 60s, then `./scripts/onebox-smoke.sh` |
+| Cache stays `miss` | Use identical request body; see `examples/demo/sample-chat-request.json` |
+
 Or with plain Docker Compose:
 
 ```bash
@@ -570,10 +600,10 @@ Status: ✅ done · 🟡 partial · ⬜ not started · 🔒 blocked
 
 ### Phase 0: Developer experience and project trust
 
-- ⬜ Quickstart smoke test
-- ⬜ Public demo scenario
-- ⬜ Contribution-ready issue backlog
-- ⬜ API documentation portal
+- ✅ Quickstart smoke test
+- ✅ Public demo scenario
+- ✅ Contribution-ready issue backlog
+- ✅ API documentation portal
 
 ### Phase 1: Registry and exact cache
 
