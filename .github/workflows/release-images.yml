@@ -126,7 +126,7 @@ jobs:
             echo "Quick start already on release page"
             exit 0
           fi
-          QUICKSTART="$(sed -e "s/__TAG__/${TAG}/g" -e "s/__REPO__/${REPO}/g" .github/release-quickstart.md)"
+          QUICKSTART="$(sed -e "s|__TAG__|${TAG}|g" -e "s|__REPO__|${REPO}|g" .github/release-quickstart.md)"
           gh release edit "$TAG" --notes "${QUICKSTART}${BODY}"
 
       - name: Upload onebox bundle artifact

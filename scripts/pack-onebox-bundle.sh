@@ -22,7 +22,7 @@ cp "${ROOT}/policies/opa/agentvoir.rego" "${STAGING}/policies/opa/"
 patch_installer() {
   local dest="$1"
   sed \
-    -e "s/__RELEASE_TAG__/${TAG}/g" \
+    -e "s|__RELEASE_TAG__|${TAG}|g" \
     -e "s|__REPO__|${GITHUB_REPO}|g" \
     "${ROOT}/deployments/docker/run-agentvoir.sh" > "${dest}"
 }
