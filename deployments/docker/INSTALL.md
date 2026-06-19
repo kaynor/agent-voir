@@ -2,7 +2,7 @@
 
 This guide is for **end users** who want to run AgentVoir locally. You need **Docker only** — no Go, Node.js, Make, or local builds.
 
-Pre-built AgentVoir images are published to [GitHub Container Registry (GHCR)](https://github.com/kaynor/agent-voir/pkgs/container/agent-voir%2Fgateway) when maintainers create a GitHub Release. Docker pulls those images; nothing is compiled on your machine.
+Pre-built AgentVoir images are published to [GitHub Container Registry (GHCR)](https://github.com/kaynor/agent-voir/pkgs/container/agent-voir) when maintainers create a GitHub Release. Docker pulls one unified image; nothing is compiled on your machine.
 
 ## What you get
 
@@ -16,7 +16,7 @@ Pre-built AgentVoir images are published to [GitHub Container Registry (GHCR)](h
 
 Postgres, Redis, ClickHouse, and OPA run **inside Docker only**. They do not bind to `:5432`, `:6379`, or `:8123` on your host, so onebox will not conflict with databases you already run.
 
-`docker ps` will show **7 containers** (all named `agentvoir-onebox-*`). That is expected — you interact with AgentVoir through the three URLs above.
+`docker ps` will show **5 containers** (all named `agentvoir-onebox-*`): Postgres, Redis, ClickHouse, OPA, and the unified AgentVoir app image. That is expected — you interact with AgentVoir through the three URLs above.
 
 ---
 
@@ -86,7 +86,7 @@ cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 Edit `deployments/docker/.env.onebox` before starting:
 
 ```bash
-AGENTVOIR_IMAGE_REGISTRY=ghcr.io/kaynor/agent-voir
+AGENTVOIR_IMAGE=ghcr.io/kaynor/agent-voir
 AGENTVOIR_VERSION=v1.0.0
 ```
 
@@ -100,7 +100,7 @@ Edit `deployments/docker/.env.onebox`:
 
 ```bash
 # Image version (match a GitHub Release tag, or use latest)
-AGENTVOIR_IMAGE_REGISTRY=ghcr.io/kaynor/agent-voir
+AGENTVOIR_IMAGE=ghcr.io/kaynor/agent-voir
 AGENTVOIR_VERSION=latest
 
 # Change these if 8080/8081/8082 are already in use
@@ -278,9 +278,7 @@ docker compose --env-file deployments/docker/.env.onebox \
 Optional — remove downloaded images:
 
 ```bash
-docker image rm ghcr.io/kaynor/agent-voir/gateway:latest \
-  ghcr.io/kaynor/agent-voir/registry-api:latest \
-  ghcr.io/kaynor/agent-voir/token-accounting:latest
+docker image rm ghcr.io/kaynor/agent-voir:latest
 ```
 
 ---
@@ -289,11 +287,9 @@ docker image rm ghcr.io/kaynor/agent-voir/gateway:latest \
 
 Creating a GitHub Release (e.g. tag `v1.0.0`) triggers [.github/workflows/release-images.yml](../../.github/workflows/release-images.yml), which builds and pushes:
 
-- `ghcr.io/kaynor/agent-voir/gateway`
-- `ghcr.io/kaynor/agent-voir/registry-api`
-- `ghcr.io/kaynor/agent-voir/token-accounting`
+- `ghcr.io/kaynor/agent-voir:<tag>`
 
-After the first publish, set each package to **Public** under GitHub → Packages so anonymous `docker pull` works for end users.
+After the first publish, set the package to **Public** under GitHub → Packages so anonymous `docker pull` works for end users.
 
 Manual publish (any tag):
 

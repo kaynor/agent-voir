@@ -220,7 +220,8 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 
 - [x] Create developer Docker Compose stack (Postgres, Redis, ClickHouse, OPA, Prometheus, Grafana, OTel)
 - [x] Create onebox stack (isolated, minimal host ports, self-contained)
-- [x] Add Dockerfiles for gateway, registry-api, and token-accounting
+- [x] Add Dockerfiles for gateway, registry-api, and token-accounting (developer stack)
+- [x] Add unified onebox Dockerfile (`deployments/docker/Dockerfile`) — one GHCR package per release
 - [x] Add healthchecks for infrastructure services
 - [x] Add Makefile targets: `onebox-up`, `onebox-down`, `onebox-smoke`, `dev-up`, `dev-up-all`
 - [x] Create `.env.onebox.example` for port and API key configuration
@@ -229,7 +230,7 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Switch onebox to pre-built GHCR images (no local build for end users)
 - [x] Add GitHub Actions workflow to build and push images on release (`.github/workflows/release-images.yml`)
 - [x] Docker-only start path (`./scripts/onebox.sh` — no Make required)
-- [ ] Publish first GitHub Release and make GHCR packages public *(maintainer action — see [docs/RELEASE.md](RELEASE.md))*
+- [ ] Publish first GitHub Release and make GHCR package public *(maintainer action — see [docs/RELEASE.md](RELEASE.md))*
 - [x] Add docker-compose health wait script for smoother first-run UX
 
 ---

@@ -13,11 +13,9 @@ Use this checklist when publishing AgentVoir container images and SDK packages.
 ## GitHub Release
 
 1. Create a [GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) with a semver tag (for example `v0.1.0`).
-2. The `Release container images` workflow builds and pushes:
-   - `ghcr.io/<owner>/agent-voir/gateway:<tag>`
-   - `ghcr.io/<owner>/agent-voir/registry-api:<tag>`
-   - `ghcr.io/<owner>/agent-voir/token-accounting:<tag>`
-3. Make GHCR packages **public** under **Package settings → Change visibility** so end users can pull without auth.
+2. The `Release container images` workflow builds and pushes a single image:
+   - `ghcr.io/<owner>/agent-voir:<tag>`
+3. Make the GHCR package **public** under **Package settings → Change visibility** so end users can pull without auth.
 4. Attach release notes summarizing user-visible changes.
 
 ## Supply chain artifacts
@@ -26,7 +24,7 @@ Each release image workflow run produces:
 
 - **SBOM** (Syft) uploaded as a workflow artifact
 - **Vulnerability scan** (Trivy) — review HIGH/CRITICAL findings before promoting
-- **Cosign signature** on each pushed image tag
+- **Cosign signature** on the pushed image tag
 - **SLSA provenance** attestation from Docker Buildx
 
 See [deployments/docker/VERIFY.md](../deployments/docker/VERIFY.md) for verification commands.

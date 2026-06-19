@@ -108,7 +108,7 @@ Status: ✅ done · 🟡 partial · ⬜ not started · 🔒 blocked
 - ✅ Python and TypeScript SDK skeletons
 - ✅ Release security and software supply chain
 
-Phase 1 is complete except the **first GitHub Release** (maintainer publishes a tag and makes GHCR packages public — see [docs/RELEASE.md](docs/RELEASE.md)).
+Phase 1 is complete except the **first GitHub Release** (maintainer publishes a tag and makes the GHCR package public — see [docs/RELEASE.md](docs/RELEASE.md)).
 
 ### Phase 2: Enterprise controls
 
@@ -309,7 +309,7 @@ Set `REGISTRY_API_URL` and `TOKEN_ACCOUNTING_URL` if your stack uses custom port
 
 | Problem | Fix |
 | ------- | --- |
-| `docker pull` fails | Set `AGENTVOIR_VERSION` to a [Release](https://github.com/kaynor/agent-voir/releases) tag; make GHCR packages public |
+| `docker pull` fails | Set `AGENTVOIR_VERSION` to a [Release](https://github.com/kaynor/agent-voir/releases) tag; make the GHCR package public |
 | Port already in use | Change `AGENTVOIR_*_PORT` in `deployments/docker/.env.onebox` |
 | Services not ready | Wait 60s, then `./scripts/onebox-smoke.sh` |
 | Cache stays `miss` | Use identical request body; see `examples/demo/sample-chat-request.json` |

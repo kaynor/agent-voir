@@ -21,18 +21,8 @@ env:
 
 jobs:
   build-and-push:
-    name: Build ${{ matrix.service }}
+    name: Build AgentVoir image
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: gateway
-            dockerfile: apps/gateway/Dockerfile
-          - service: registry-api
-            dockerfile: apps/registry-api/Dockerfile
-          - service: token-accounting
-            dockerfile: services/token-accounting/Dockerfile
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,11 +51,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ${{ matrix.dockerfile }}
+          file: deployments/docker/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ steps.meta.outputs.tag }}
-            ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ github.repository }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true
@@ -74,14 +64,14 @@ jobs:
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ steps.meta.outputs.tag }}
-          artifact-name: sbom-${{ matrix.service }}-${{ steps.meta.outputs.tag }}.spdx.json
-          output-file: sbom-${{ matrix.service }}.spdx.json
+          image: ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.tag }}
+          artifact-name: sbom-agentvoir-${{ steps.meta.outputs.tag }}.spdx.json
+          output-file: sbom-agentvoir.spdx.json
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ steps.meta.outputs.tag }}
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.tag }}
           format: table
           severity: HIGH,CRITICAL
           exit-code: 0
@@ -93,11 +83,11 @@ jobs:
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
-          cosign sign --yes "${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}@${DIGEST}"
+          cosign sign --yes "${{ env.REGISTRY }}/${{ github.repository }}@${DIGEST}"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          subject-name: ${{ env.REGISTRY }}/${{ github.repository }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true

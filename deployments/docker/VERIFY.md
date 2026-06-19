@@ -9,10 +9,10 @@ AgentVoir release images are published to GitHub Container Registry (GHCR) and s
 
 ## Verify image signature
 
-Replace `<owner>`, `<tag>`, and `<service>` (`gateway`, `registry-api`, or `token-accounting`):
+Replace `<owner>` and `<tag>`:
 
 ```bash
-export IMAGE="ghcr.io/<owner>/agent-voir/gateway:<tag>"
+export IMAGE="ghcr.io/<owner>/agent-voir:<tag>"
 cosign verify "$IMAGE" \
   --certificate-oidc-issuer=https://token.actions.githubusercontent.com \
   --certificate-identity-regexp='https://github.com/<owner>/agent-voir/.github/workflows/release-images.yml@refs/tags/.*'
@@ -25,7 +25,7 @@ A successful verification prints the signed payload digest.
 Download the SBOM artifact from the GitHub Actions run for the release, or generate locally:
 
 ```bash
-syft "$IMAGE" -o spdx-json > agentvoir-gateway.sbom.json
+syft "$IMAGE" -o spdx-json > agentvoir.sbom.json
 ```
 
 ## Scan for vulnerabilities
@@ -41,7 +41,7 @@ Review findings before deploying to production. Some base-image CVEs may require
 After pulling release images:
 
 ```bash
-export AGENTVOIR_IMAGE_TAG=<tag>
+export AGENTVOIR_VERSION=<tag>
 ./scripts/onebox.sh up
 ./scripts/wait-for-onebox.sh
 ./scripts/onebox-smoke.sh

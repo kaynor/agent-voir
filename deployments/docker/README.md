@@ -4,7 +4,7 @@
 
 ## Onebox (end users / try-outs)
 
-**Goal:** minimum friction — pull pre-built images, run `docker compose up`, no local compile.
+**Goal:** minimum friction — pull a pre-built image, run `docker compose up`, no local compile.
 
 ```bash
 cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
@@ -15,17 +15,15 @@ cp deployments/docker/.env.onebox.example deployments/docker/.env.onebox
 
 Uses `deployments/docker/docker-compose.onebox.yml` with project name `agentvoir-onebox`.
 
-App images (default):
+App image (default):
 
-- `ghcr.io/kaynor/agent-voir/gateway`
-- `ghcr.io/kaynor/agent-voir/registry-api`
-- `ghcr.io/kaynor/agent-voir/token-accounting`
+- `ghcr.io/kaynor/agent-voir:<tag>` — gateway, registry API, and token accounting in one container
 
 Published on each [GitHub Release](https://github.com/kaynor/agent-voir/releases) via `.github/workflows/release-images.yml`.
 
 | What | Onebox | Developer stack (`make dev-up-all`) |
 | ---- | ------ | ----------------------------------- |
-| Local image build | No — pulls from GHCR | Yes — `--build` |
+| Local image build | No — pulls from GHCR | Yes — `--build` per service |
 | Requires Make | No | Optional |
 | Postgres on host `:5432` | No — internal only | Yes |
 | Redis on host `:6379` | No — internal only | Yes |
@@ -62,8 +60,6 @@ Full stack with apps (infra ports exposed for hybrid local development):
 make dev-up-all
 ```
 
-## Why not a single container?
+The developer stack still builds **separate service images** (`apps/gateway/Dockerfile`, etc.) so gateway, registry, and analytics can be developed and scaled independently.
 
-A true all-in-one image (one container, many processes) is possible but harder to operate: mixed logs, coupled restarts, and heavier rebuilds. The onebox Compose file gives a similar **black-box experience** with standard Docker commands while keeping each service independently healthy inside Docker.
-
-For production, use separate services (Helm/Kubernetes) so gateway, registry, and analytics can scale independently.
+For production Kubernetes deployments, use separate services (Helm) rather than the unified onebox image.
