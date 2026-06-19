@@ -50,5 +50,10 @@ rm -f "${OUT_DIR}/${ZIP_NAME}"
 patch_installer "${OUT_DIR}/run-agentvoir.sh"
 chmod +x "${OUT_DIR}/run-agentvoir.sh"
 
+if grep -q '__RELEASE_TAG__\|__REPO__' "${OUT_DIR}/run-agentvoir.sh"; then
+  echo "ERROR: run-agentvoir.sh was not patched (placeholders remain)" >&2
+  exit 1
+fi
+
 echo "Created ${OUT_DIR}/${ZIP_NAME}"
 echo "Created ${OUT_DIR}/run-agentvoir.sh"

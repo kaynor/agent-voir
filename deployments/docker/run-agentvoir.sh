@@ -2,8 +2,8 @@
 # Download the AgentVoir onebox bundle from a GitHub Release and start the stack.
 # No git clone required.
 #
-# Usage (use the release tag in the URL — not "latest"):
-#   curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash
+# Usage (use the release tag in the URL and pass it to bash):
+#   curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.7/run-agentvoir.sh | bash -s v0.2.7
 #   ./run-agentvoir.sh
 #   ./run-agentvoir.sh --smoke
 
@@ -22,6 +22,12 @@ if [[ "$REPO" == "__REPO__" ]]; then
   REPO="kaynor/agent-voir"
 fi
 
+# curl ... | bash -s v0.2.7  — required when the script is piped (not executed as a file).
+if [[ -z "$VERSION" && $# -gt 0 && "$1" != --* ]]; then
+  VERSION="$1"
+  shift
+fi
+
 for arg in "$@"; do
   case "$arg" in
     --smoke) RUN_SMOKE=1 ;;
@@ -29,12 +35,11 @@ for arg in "$@"; do
       cat <<EOF
 AgentVoir onebox installer (Docker only)
 
-  Download from a specific release, then run:
-    curl -fsSL https://github.com/${REPO}/releases/download/<tag>/run-agentvoir.sh | bash
+  curl -fsSL https://github.com/${REPO}/releases/download/<tag>/run-agentvoir.sh | bash -s <tag>
 
-  AGENTVOIR_VERSION=v0.2.6 $0   Override release tag
-  AGENTVOIR_INSTALL_DIR=~/av $0  Install directory
-  $0 --smoke                     Start stack and run health checks
+  AGENTVOIR_VERSION=v0.2.7 bash -s        Only when piping: env must apply to bash, not curl
+  AGENTVOIR_INSTALL_DIR=~/av $0           Install directory
+  $0 --smoke                              Start stack and run health checks
 
 Requires: docker, curl, unzip
 EOF
@@ -57,8 +62,8 @@ if [[ -z "$VERSION" && "$DEFAULT_RELEASE_TAG" != "__RELEASE_TAG__" ]]; then
 fi
 
 if [[ -z "$VERSION" ]]; then
-  echo "ERROR: Set AGENTVOIR_VERSION=vX.Y.Z or download run-agentvoir.sh from a GitHub Release URL." >&2
-  echo "  Example: curl -fsSL https://github.com/${REPO}/releases/download/v0.2.6/run-agentvoir.sh | bash" >&2
+  echo "ERROR: Pass the release tag when piping: curl ... | bash -s vX.Y.Z" >&2
+  echo "  Example: curl -fsSL https://github.com/${REPO}/releases/download/v0.2.7/run-agentvoir.sh | bash -s v0.2.7" >&2
   exit 1
 fi
 

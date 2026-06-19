@@ -12,7 +12,7 @@ Published on each GitHub Release as:
 Use the **exact release tag** in the URL (from [GitHub Releases](https://github.com/kaynor/agent-voir/releases)):
 
 ```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash -s v0.2.6
 ```
 
 The downloaded script is pinned to that release — no `latest` redirect.

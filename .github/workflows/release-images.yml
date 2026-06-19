@@ -102,6 +102,11 @@ jobs:
         run: |
           chmod +x scripts/pack-onebox-bundle.sh
           ./scripts/pack-onebox-bundle.sh "${{ steps.meta.outputs.tag }}" "${{ env.REGISTRY }}/${{ github.repository }}" "${{ github.repository }}"
+          if grep -q '__RELEASE_TAG__' dist/run-agentvoir.sh; then
+            echo "ERROR: run-agentvoir.sh still contains __RELEASE_TAG__ placeholder" >&2
+            exit 1
+          fi
+          echo "Installer pinned to: $(grep DEFAULT_RELEASE_TAG dist/run-agentvoir.sh | head -1)"
 
       - name: Upload onebox bundle to release
         if: github.event_name == 'release'

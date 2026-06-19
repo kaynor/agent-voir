@@ -45,13 +45,13 @@ Requires Docker, `curl`, and `unzip`.
 **One command** (replace `vX.Y.Z` with the release tag on this page):
 
 ```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/download/vX.Y.Z/run-agentvoir.sh | bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/vX.Y.Z/run-agentvoir.sh | bash -s vX.Y.Z
 ```
 
-Example for release `v0.2.6`:
+Example for release `v0.2.7`:
 
 ```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.7/run-agentvoir.sh | bash -s v0.2.7
 ```
 
 > Each [GitHub Release](https://github.com/kaynor/agent-voir/releases) page shows the exact command for that version after the release workflow completes.
