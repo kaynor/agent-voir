@@ -68,10 +68,6 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 func (h *Handler) chatCompletions(w http.ResponseWriter, r *http.Request) {
 	started := time.Now()
-	if !authorize(r, h.config.APIKey) {
-		writeOpenAIError(w, http.StatusUnauthorized, "invalid_api_key", "invalid API key")
-		return
-	}
 
 	agentID := strings.TrimSpace(r.Header.Get(middleware.HeaderAgentID))
 	if agentID == "" {
@@ -355,11 +351,6 @@ func (h *Handler) streamChatCompletions(
 }
 
 func (h *Handler) listModels(w http.ResponseWriter, r *http.Request) {
-	if !authorize(r, h.config.APIKey) {
-		writeOpenAIError(w, http.StatusUnauthorized, "invalid_api_key", "invalid API key")
-		return
-	}
-
 	payload := map[string]any{
 		"object": "list",
 		"data": []map[string]any{

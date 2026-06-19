@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/agentvoir/agentvoir/apps/registry-api/internal/auth"
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/httputil"
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/postgres"
 	"github.com/agentvoir/agentvoir/apps/registry-api/internal/server"
@@ -35,9 +36,14 @@ func main() {
 	mux.HandleFunc("/healthz", healthz)
 	server.RegisterRoutes(mux, stores, os.Getenv("TOKEN_ACCOUNTING_URL"), os.Getenv("OPA_URL"))
 
+	authMiddleware := auth.NewMiddleware()
+	if agentAuthEnabled() {
+		log.Printf("AgentVoir registry API authentication enabled (OIDC and/or REGISTRY_API_KEY)")
+	}
+
 	httpServer := &http.Server{
 		Addr:              addr,
-		Handler:           httputil.WrapDevCORS(mux),
+		Handler:           httputil.WrapDevCORS(authMiddleware(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
@@ -66,4 +72,8 @@ func env(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func agentAuthEnabled() bool {
+	return os.Getenv("OIDC_ISSUER_URL") != "" || os.Getenv("REGISTRY_API_KEY") != ""
 }

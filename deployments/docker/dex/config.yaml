@@ -1,0 +1,41 @@
+# Dex OIDC for local AgentVoir development.
+# Issuer must match OIDC_ISSUER_URL in agentvoir (http://dex:5556/dex inside Docker network).
+issuer: http://dex:5556/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+staticClients:
+  - id: agentvoir
+    secret: agentvoir-dev-secret
+    name: AgentVoir
+    redirectURIs:
+      - http://localhost:5555/callback
+    public: false
+
+enablePasswordDB: true
+
+staticPasswords:
+  - email: admin@agentvoir.local
+    hash: "$2b$10$ZGT2lQA2Rl0amV9kz0CS2eDhBwG/mi0NnGzzUoLMxEK1Lf0paGJC6"
+    username: admin
+    userID: admin
+
+oauth2:
+  skipApprovalScreen: true
+  passwordConnector: local
+  responseTypes:
+    - code
+    - token
+  grantTypes:
+    - password
+    - client_credentials
+    - authorization_code
+    - refresh_token
+
+logger:
+  level: info
+  format: text

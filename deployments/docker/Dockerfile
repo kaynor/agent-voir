@@ -7,6 +7,12 @@ ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
 
+COPY packages/auth-go/go.mod packages/auth-go/go.sum ./packages/auth-go/
+COPY packages/auth-go/ ./packages/auth-go/
+WORKDIR /src/packages/auth-go
+RUN go mod download
+
+WORKDIR /src
 COPY apps/gateway/go.mod apps/gateway/go.sum ./apps/gateway/
 WORKDIR /src/apps/gateway
 RUN go mod download

@@ -318,13 +318,13 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 **TODO items:**
 
-- [ ] Add OIDC provider configuration (issuer URL, client ID, client secret)
-- [ ] Validate JWT access tokens on registry API requests
-- [ ] Validate JWT access tokens on gateway requests (or accept OIDC + API key hybrid)
-- [ ] Map OIDC claims (`sub`, `email`, `groups`) to AgentVoir user identity
-- [ ] Support machine-to-machine (client credentials) flow for automated agents
-- [ ] Document OIDC setup for common providers (Okta, Azure AD, Keycloak)
-- [ ] Add integration tests with a local OIDC mock (e.g. Dex)
+- [x] Add OIDC provider configuration (issuer URL, client ID, client secret)
+- [x] Validate JWT access tokens on registry API requests
+- [x] Validate JWT access tokens on gateway requests (or accept OIDC + API key hybrid)
+- [x] Map OIDC claims (`sub`, `email`, `groups`) to AgentVoir user identity
+- [x] Add integration tests with a local OIDC mock (e.g. Dex)
+- [x] Document OIDC setup for common providers (Okta, Azure AD, Keycloak)
+- [ ] Support machine-to-machine (client credentials) flow for automated agents *(Dex supports locally; production IdP wiring pending)*
 - [ ] Deprecate or gate static API keys behind admin-only bootstrap mode
 
 ---

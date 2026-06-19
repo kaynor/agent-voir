@@ -15,6 +15,7 @@ type Config struct {
 	OpenAIAPIKey    string
 	OpenAIBaseURL   string
 	RegistryAPIURL     string
+	RegistryAPIKey     string
 	TokenAccountingURL string
 	OPAURL             string
 }
@@ -29,6 +30,7 @@ func LoadConfig() Config {
 		OpenAIAPIKey:    os.Getenv("OPENAI_API_KEY"),
 		OpenAIBaseURL:   env("OPENAI_BASE_URL", "https://api.openai.com/v1"),
 		RegistryAPIURL:     env("REGISTRY_API_URL", "http://localhost:8081"),
+		RegistryAPIKey:     os.Getenv("REGISTRY_API_KEY"),
 		TokenAccountingURL: env("TOKEN_ACCOUNTING_URL", "http://localhost:8082"),
 		OPAURL:             os.Getenv("OPA_URL"),
 	}

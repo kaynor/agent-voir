@@ -130,7 +130,7 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 
 **Full enterprise controls** (ongoing):
 
-- ⬜ OIDC authentication
+- 🟡 OIDC authentication *(JWT on registry + gateway; Dex onebox overlay; RBAC pending)*
 - ⬜ RBAC and service accounts
 - 🟡 Per-agent budgets *(monthly cap + utilization API; per-request token cap pending)*
 - 🟡 Per-agent and per-tenant rate limits *(requests/minute enforced; tokens/minute pending)*
@@ -305,6 +305,15 @@ After onebox is running (`make onebox-up-build` for contributors with latest cod
 ./scripts/demo-policy-simulate.sh # Policy what-if via registry API
 make showcase                     # quickstart + all governance demos
 ```
+
+OIDC authentication (optional Dex overlay):
+
+```bash
+make onebox-up-oidc               # onebox + Dex IdP
+make demo-oidc                    # password grant → JWT → registry/gateway
+```
+
+Guide: [docs/guides/oidc-setup.md](docs/guides/oidc-setup.md)
 
 ### Admin web console
 

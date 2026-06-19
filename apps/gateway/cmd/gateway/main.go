@@ -38,7 +38,7 @@ func main() {
 		openaiProvider = providers.NewOpenAIProvider(config.OpenAIAPIKey, config.OpenAIBaseURL)
 	}
 	providerRegistry := providers.NewRegistry(openaiProvider, providers.NewMockProvider())
-	agentRegistry := agentregistry.NewClient(config.RegistryAPIURL)
+	agentRegistry := agentregistry.NewClient(config.RegistryAPIURL, config.RegistryAPIKey)
 	accountingClient := accounting.NewClient(config.TokenAccountingURL)
 	budgetChecker := budget.NewChecker(&budget.RegistryAdapter{Client: agentRegistry}, accounting.NewSpendAdapter(accountingClient))
 
@@ -73,9 +73,22 @@ func main() {
 	mux.Handle("/metrics", metrics.Handler())
 	handler.RegisterRoutes(mux)
 
+	authCfg := middleware.LoadAuthConfig()
+	if !authCfg.Enabled() && config.APIKey != "" {
+		authCfg.StaticAPIKeys = []string{config.APIKey}
+	}
+	if authCfg.Enabled() {
+		if authCfg.IssuerURL != "" {
+			log.Printf("AgentVoir gateway accepting OIDC tokens from %s", authCfg.IssuerURL)
+		}
+		if len(authCfg.StaticAPIKeys) > 0 {
+			log.Printf("AgentVoir gateway accepting bootstrap API key (GATEWAY_API_KEY)")
+		}
+	}
+
 	server := &http.Server{
 		Addr:              config.Addr,
-		Handler:           middleware.DevCORS(mux),
+		Handler:           middleware.DevCORS(middleware.Auth(authCfg)(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

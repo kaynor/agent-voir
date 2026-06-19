@@ -55,6 +55,7 @@ type BudgetLimits struct {
 // Client loads agent runtime configuration from the registry API.
 type Client struct {
 	baseURL    string
+	apiKey     string
 	httpClient *http.Client
 	mu         sync.RWMutex
 	cache      map[string]cachedConfig
@@ -72,15 +73,22 @@ type cachedBudget struct {
 	expiresAt time.Time
 }
 
-func NewClient(baseURL string) *Client {
+func NewClient(baseURL, apiKey string) *Client {
 	return &Client{
 		baseURL: strings.TrimRight(baseURL, "/"),
+		apiKey:  strings.TrimSpace(apiKey),
 		httpClient: &http.Client{
 			Timeout: 5 * time.Second,
 		},
 		cache:       make(map[string]cachedConfig),
 		budgetCache: make(map[string]cachedBudget),
 		ttl:         30 * time.Second,
+	}
+}
+
+func (c *Client) setAuth(req *http.Request) {
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
 }
 
@@ -140,6 +148,7 @@ func (c *Client) GetBudget(ctx context.Context, agentID, version string) (Budget
 	if err != nil {
 		return BudgetLimits{}, err
 	}
+	c.setAuth(req)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return BudgetLimits{}, err
@@ -188,6 +197,7 @@ func (c *Client) fetch(ctx context.Context, agentID, version, environment string
 	if err != nil {
 		return AgentConfig{}, err
 	}
+	c.setAuth(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -239,6 +249,7 @@ func (c *Client) fetch(ctx context.Context, agentID, version, environment string
 	routeEndpoint := c.baseURL + "/v1/agents/" + url.PathEscape(agentID) + "/model-route?version=" + url.QueryEscape(version)
 	routeReq, err := http.NewRequestWithContext(ctx, http.MethodGet, routeEndpoint, nil)
 	if err == nil {
+		c.setAuth(routeReq)
 		routeResp, err := c.httpClient.Do(routeReq)
 		if err == nil {
 			defer routeResp.Body.Close()

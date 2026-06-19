@@ -1,0 +1,28 @@
+# Optional OIDC overlay for onebox — enables Dex + JWT auth on registry/gateway.
+#
+#   docker compose --env-file deployments/docker/.env.onebox \
+#     -f deployments/docker/docker-compose.onebox.yml \
+#     -f deployments/docker/docker-compose.onebox.oidc.yml up -d
+
+name: agentvoir-onebox
+
+services:
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    environment:
+      DEX_CLIENT_CREDENTIAL_GRANT_ENABLED_BY_DEFAULT: "true"
+    volumes:
+      - ./dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - "${DEX_PORT:-5556}:5556"
+    restart: unless-stopped
+
+  agentvoir:
+    environment:
+      OIDC_ISSUER_URL: http://dex:5556/dex
+      OIDC_CLIENT_ID: agentvoir
+      OIDC_GROUPS_CLAIM: groups
+      REGISTRY_API_KEY: ${REGISTRY_API_KEY:-agentvoir-internal-registry-key}
+    depends_on:
+      - dex

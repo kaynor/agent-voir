@@ -12,6 +12,7 @@ import (
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
+	agentauth "github.com/agentvoir/agentvoir/packages/auth-go"
 )
 
 func TestChatCompletionsMockProvider(t *testing.T) {
@@ -24,13 +25,14 @@ func TestChatCompletionsMockProvider(t *testing.T) {
 
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
+	secured := middleware.Auth(agentauth.Config{StaticAPIKeys: []string{"test-key"}})(mux)
 
 	body := `{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"Hello"}]}`
 	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewBufferString(body))
 	req.Header.Set("Authorization", "Bearer test-key")
 	req.Header.Set(middleware.HeaderAgentID, "customer-support-agent")
 	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, req)
+	secured.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
@@ -55,7 +57,7 @@ func TestChatCompletionsMockProvider(t *testing.T) {
 	req2.Header.Set("Authorization", "Bearer test-key")
 	req2.Header.Set(middleware.HeaderAgentID, "customer-support-agent")
 	rec2 := httptest.NewRecorder()
-	mux.ServeHTTP(rec2, req2)
+	secured.ServeHTTP(rec2, req2)
 	if rec2.Header().Get(middleware.HeaderCacheStatus) != "hit" {
 		t.Fatalf("second cache status = %q", rec2.Header().Get(middleware.HeaderCacheStatus))
 	}
@@ -65,12 +67,13 @@ func TestChatCompletionsRequiresAgentID(t *testing.T) {
 	handler := NewHandler(Config{APIKey: "test-key"}, cache.NewMemoryStore(), providers.NewRegistry(nil, providers.NewMockProvider()), nil, nil, policy.NopEvaluator{}, nil, usage.NopRecorder{})
 	mux := http.NewServeMux()
 	handler.RegisterRoutes(mux)
+	secured := middleware.Auth(agentauth.Config{StaticAPIKeys: []string{"test-key"}})(mux)
 
 	body := `{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"Hello"}]}`
 	req := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewBufferString(body))
 	req.Header.Set("Authorization", "Bearer test-key")
 	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, req)
+	secured.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", rec.Code)

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean showcase demo-policy demo-budget demo-rate-limit demo-fallback demo-budget-status demo-policy-simulate seed-demo wait-for-onebox test-migrations
+.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-up-oidc onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean showcase demo-policy demo-budget demo-rate-limit demo-fallback demo-budget-status demo-policy-simulate demo-oidc seed-demo wait-for-onebox test-migrations
 
 ONEBOX_COMPOSE := deployments/docker/docker-compose.onebox.yml
 ONEBOX_BUILD_COMPOSE := deployments/docker/docker-compose.onebox.build.yml
@@ -21,6 +21,8 @@ help:
 	@echo "  make demo-fallback        Provider fallback demo (primary → mock)"
 	@echo "  make demo-budget-status   Budget utilization API demo"
 	@echo "  make demo-policy-simulate Policy simulation API demo"
+	@echo "  make demo-oidc            OIDC JWT auth demo (requires Dex overlay)"
+	@echo "  make onebox-up-oidc       Start onebox with Dex OIDC overlay"
 	@echo "  make showcase             quickstart + all governance demos"
 	@echo "  make run-web              Admin console at http://localhost:3000"
 	@echo "  make dev-docs             Start local Swagger UI for API specs (:8089)"
@@ -61,6 +63,10 @@ onebox-up:
 onebox-up-build:
 	@cp -n deployments/docker/.env.onebox.example $(ONEBOX_ENV) || true
 	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) -f $(ONEBOX_BUILD_COMPOSE) up -d --build
+
+onebox-up-oidc:
+	@cp -n deployments/docker/.env.onebox.example $(ONEBOX_ENV) || true
+	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) -f deployments/docker/docker-compose.onebox.oidc.yml -f $(ONEBOX_BUILD_COMPOSE) up -d --build
 
 onebox-down:
 	docker compose --env-file $(ONEBOX_ENV) -f $(ONEBOX_COMPOSE) down
@@ -109,6 +115,10 @@ demo-budget-status:
 demo-policy-simulate:
 	@chmod +x scripts/demo-policy-simulate.sh
 	@./scripts/demo-policy-simulate.sh
+
+demo-oidc:
+	@chmod +x scripts/demo-oidc.sh
+	@./scripts/demo-oidc.sh
 
 showcase:
 	@chmod +x scripts/quickstart.sh scripts/demo-policy-denial.sh scripts/demo-budget-block.sh \
