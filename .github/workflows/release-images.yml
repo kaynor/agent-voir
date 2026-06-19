@@ -11,10 +11,11 @@ on:
         default: latest
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   id-token: write
   attestations: write
+  actions: read
 
 env:
   REGISTRY: ghcr.io
@@ -67,6 +68,7 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.meta.outputs.tag }}
           artifact-name: sbom-agentvoir-${{ steps.meta.outputs.tag }}.spdx.json
           output-file: sbom-agentvoir.spdx.json
+          upload-release-assets: false
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
