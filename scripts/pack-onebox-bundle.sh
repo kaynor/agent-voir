@@ -3,8 +3,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TAG="${1:?usage: pack-onebox-bundle.sh <tag> [ghcr.io/owner/repo]}"
+TAG="${1:?usage: pack-onebox-bundle.sh <tag> [ghcr.io/owner/repo] [owner/repo]}"
 IMAGE="${2:-ghcr.io/kaynor/agent-voir}"
+GITHUB_REPO="${3:-kaynor/agent-voir}"
 
 BUNDLE_SRC="${ROOT}/deployments/docker/onebox-bundle"
 STAGING="$(mktemp -d)"
@@ -17,7 +18,16 @@ trap cleanup EXIT
 cp -a "${BUNDLE_SRC}/." "${STAGING}/"
 mkdir -p "${STAGING}/policies/opa"
 cp "${ROOT}/policies/opa/agentvoir.rego" "${STAGING}/policies/opa/"
-cp "${ROOT}/deployments/docker/run-agentvoir.sh" "${STAGING}/run-agentvoir.sh"
+
+patch_installer() {
+  local dest="$1"
+  sed \
+    -e "s/__RELEASE_TAG__/${TAG}/g" \
+    -e "s|__REPO__|${GITHUB_REPO}|g" \
+    "${ROOT}/deployments/docker/run-agentvoir.sh" > "${dest}"
+}
+
+patch_installer "${STAGING}/run-agentvoir.sh"
 
 echo "${TAG}" > "${STAGING}/.version"
 echo "${IMAGE}" > "${STAGING}/.image"
@@ -37,7 +47,7 @@ rm -f "${OUT_DIR}/${ZIP_NAME}"
   zip -qr "${OUT_DIR}/${ZIP_NAME}" .
 )
 
-cp "${ROOT}/deployments/docker/run-agentvoir.sh" "${OUT_DIR}/run-agentvoir.sh"
+patch_installer "${OUT_DIR}/run-agentvoir.sh"
 chmod +x "${OUT_DIR}/run-agentvoir.sh"
 
 echo "Created ${OUT_DIR}/${ZIP_NAME}"

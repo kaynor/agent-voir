@@ -101,7 +101,7 @@ jobs:
       - name: Pack onebox run bundle
         run: |
           chmod +x scripts/pack-onebox-bundle.sh
-          ./scripts/pack-onebox-bundle.sh "${{ steps.meta.outputs.tag }}" "${{ env.REGISTRY }}/${{ github.repository }}"
+          ./scripts/pack-onebox-bundle.sh "${{ steps.meta.outputs.tag }}" "${{ env.REGISTRY }}/${{ github.repository }}" "${{ github.repository }}"
 
       - name: Upload onebox bundle to release
         if: github.event_name == 'release'
@@ -113,6 +113,21 @@ jobs:
             "dist/agentvoir-onebox-${TAG}.zip" \
             "dist/run-agentvoir.sh" \
             --clobber
+
+      - name: Add Docker quick start to release page
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          REPO="${{ github.repository }}"
+          BODY="$(gh release view "$TAG" --json body -q .body)"
+          if echo "$BODY" | grep -q 'agentvoir-quickstart'; then
+            echo "Quick start already on release page"
+            exit 0
+          fi
+          QUICKSTART="$(sed -e "s/__TAG__/${TAG}/g" -e "s/__REPO__/${REPO}/g" .github/release-quickstart.md)"
+          gh release edit "$TAG" --notes "${QUICKSTART}${BODY}"
 
       - name: Upload onebox bundle artifact
         if: github.event_name == 'workflow_dispatch'

@@ -42,18 +42,21 @@ docker compose version
 
 Requires Docker, `curl`, and `unzip`.
 
-```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/latest/download/run-agentvoir.sh | bash
-```
-
-Pin a release tag:
+**One command** (replace `vX.Y.Z` with the release tag on this page):
 
 ```bash
-AGENTVOIR_VERSION=v0.2.4 curl -fsSL \
-  https://github.com/kaynor/agent-voir/releases/download/v0.2.4/run-agentvoir.sh | bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/vX.Y.Z/run-agentvoir.sh | bash
 ```
 
-This downloads the small **onebox bundle** (~10 KB + policies), pulls the GHCR image, and starts the stack under `~/.agentvoir/onebox` by default.
+Example for release `v0.2.6`:
+
+```bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash
+```
+
+> Each [GitHub Release](https://github.com/kaynor/agent-voir/releases) page shows the exact command for that version after the release workflow completes.
+
+This downloads the small **onebox bundle** (~10 KB + policies), pulls the matching GHCR image, and starts the stack under `~/.agentvoir/onebox` by default.
 
 ### Option B — Onebox zip only (no git clone)
 

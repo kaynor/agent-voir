@@ -9,16 +9,13 @@ Published on each GitHub Release as:
 
 ## End user: one command
 
-```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/latest/download/run-agentvoir.sh | bash
-```
-
-Pin a version:
+Use the **exact release tag** in the URL (from [GitHub Releases](https://github.com/kaynor/agent-voir/releases)):
 
 ```bash
-AGENTVOIR_VERSION=v0.2.4 curl -fsSL \
-  https://github.com/kaynor/agent-voir/releases/download/v0.2.4/run-agentvoir.sh | bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash
 ```
+
+The downloaded script is pinned to that release — no `latest` redirect.
 
 ## End user: download zip
 

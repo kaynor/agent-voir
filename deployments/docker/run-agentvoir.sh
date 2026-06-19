@@ -2,18 +2,25 @@
 # Download the AgentVoir onebox bundle from a GitHub Release and start the stack.
 # No git clone required.
 #
-# Usage:
-#   curl -fsSL https://github.com/kaynor/agent-voir/releases/latest/download/run-agentvoir.sh | bash
-#   AGENTVOIR_VERSION=v0.2.4 curl -fsSL .../run-agentvoir.sh | bash
-#   ./run-agentvoir.sh                    # if you already downloaded this script
-#   ./run-agentvoir.sh --smoke            # start and run health checks
+# Usage (use the release tag in the URL — not "latest"):
+#   curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.2.6/run-agentvoir.sh | bash
+#   ./run-agentvoir.sh
+#   ./run-agentvoir.sh --smoke
 
 set -euo pipefail
 
-REPO="${AGENTVOIR_REPO:-kaynor/agent-voir}"
+# Substituted when packed for each GitHub Release (__RELEASE_TAG__ / __REPO__).
+DEFAULT_RELEASE_TAG="__RELEASE_TAG__"
+DEFAULT_REPO="__REPO__"
+
+REPO="${AGENTVOIR_REPO:-${DEFAULT_REPO}}"
 VERSION="${AGENTVOIR_VERSION:-}"
 INSTALL_DIR="${AGENTVOIR_INSTALL_DIR:-${HOME}/.agentvoir/onebox}"
 RUN_SMOKE=0
+
+if [[ "$REPO" == "__REPO__" ]]; then
+  REPO="kaynor/agent-voir"
+fi
 
 for arg in "$@"; do
   case "$arg" in
@@ -22,9 +29,12 @@ for arg in "$@"; do
       cat <<EOF
 AgentVoir onebox installer (Docker only)
 
-  AGENTVOIR_VERSION=v0.2.4 $0     Pin release tag (default: latest GitHub release)
-  AGENTVOIR_INSTALL_DIR=~/av $0   Where to unpack the bundle
-  $0 --smoke                      Start stack and run health checks
+  Download from a specific release, then run:
+    curl -fsSL https://github.com/${REPO}/releases/download/<tag>/run-agentvoir.sh | bash
+
+  AGENTVOIR_VERSION=v0.2.6 $0   Override release tag
+  AGENTVOIR_INSTALL_DIR=~/av $0  Install directory
+  $0 --smoke                     Start stack and run health checks
 
 Requires: docker, curl, unzip
 EOF
@@ -42,19 +52,14 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-resolve_latest_version() {
-  curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n1
-}
+if [[ -z "$VERSION" && "$DEFAULT_RELEASE_TAG" != "__RELEASE_TAG__" ]]; then
+  VERSION="$DEFAULT_RELEASE_TAG"
+fi
 
 if [[ -z "$VERSION" ]]; then
-  echo "Resolving latest release for ${REPO}..."
-  VERSION="$(resolve_latest_version)"
-  if [[ -z "$VERSION" ]]; then
-    echo "ERROR: Could not resolve latest release. Set AGENTVOIR_VERSION=vX.Y.Z" >&2
-    exit 1
-  fi
+  echo "ERROR: Set AGENTVOIR_VERSION=vX.Y.Z or download run-agentvoir.sh from a GitHub Release URL." >&2
+  echo "  Example: curl -fsSL https://github.com/${REPO}/releases/download/v0.2.6/run-agentvoir.sh | bash" >&2
+  exit 1
 fi
 
 BUNDLE_NAME="agentvoir-onebox-${VERSION}.zip"
@@ -64,6 +69,7 @@ mkdir -p "${INSTALL_DIR}"
 TMP_ZIP="$(mktemp)"
 trap 'rm -f "$TMP_ZIP"' EXIT
 
+echo "AgentVoir release: ${VERSION}"
 echo "Downloading ${DOWNLOAD_URL} ..."
 if ! curl -fsSL -o "$TMP_ZIP" "$DOWNLOAD_URL"; then
   echo "ERROR: Download failed. Check AGENTVOIR_VERSION=${VERSION} and that the release includes ${BUNDLE_NAME}" >&2

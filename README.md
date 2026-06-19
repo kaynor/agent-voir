@@ -255,10 +255,10 @@ See **[deployments/docker/INSTALL.md](deployments/docker/INSTALL.md)** for the f
 
 The **onebox** stack uses **pre-built Docker images** — no Make, no Go, and no local compile.
 
-**One command (no repo download):**
+**One command** (use the tag from the release you want — see [GitHub Releases](https://github.com/kaynor/agent-voir/releases)):
 
 ```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/latest/download/run-agentvoir.sh | bash
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/vX.Y.Z/run-agentvoir.sh | bash
 ```
 
 Or download **`agentvoir-onebox-vX.Y.Z.zip`** from [GitHub Releases](https://github.com/kaynor/agent-voir/releases), unzip, and run `./onebox.sh`.
