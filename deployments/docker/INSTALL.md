@@ -207,6 +207,26 @@ Pre-built images are published when a maintainer creates a **GitHub Release**. I
 2. Set `AGENTVOIR_VERSION` in `.env.onebox` to that release tag (e.g. `v1.0.0`).
 3. Ensure GHCR packages are **public** (maintainer setting under GitHub → Packages).
 
+### No match for platform in manifest
+
+The published image must include your CPU architecture (`linux/amd64` for Intel/AMD, `linux/arm64` for Apple Silicon and ARM Linux). Releases **before multi-arch support** only ship `linux/amd64`.
+
+**Workaround (Apple Silicon / ARM until you publish a new release):**
+
+```bash
+docker pull --platform linux/amd64 ghcr.io/kaynor/agent-voir:v0.2.3
+```
+
+Add under the `agentvoir` service in `docker-compose.onebox.yml` (or export before compose):
+
+```yaml
+platform: linux/amd64
+```
+
+Docker will run the image via emulation (a bit slower, but works for local try-outs).
+
+**Permanent fix:** cut a new GitHub Release after multi-arch builds are enabled in the release workflow (`linux/amd64` + `linux/arm64`).
+
 **Contributors** building from source without published images:
 
 ```bash
