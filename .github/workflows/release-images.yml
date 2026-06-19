@@ -58,8 +58,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+          # Registry-only attestation; SBOM is generated in the next step as a workflow artifact.
+          provenance: mode=min
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
