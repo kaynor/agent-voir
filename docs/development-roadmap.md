@@ -18,6 +18,23 @@ Status legend:
 
 For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see [Tech Stack Usage](architecture/tech-stack-usage.md).
 
+**Strategy and metadata discussions** (product direction — inform phases below):
+
+| Document | Topic |
+| -------- | ----- |
+| [meta-data.md](meta-data.md) | Enterprise metadata model for governed runtime assets |
+| [agent-voir-home.md](agent-voir-home.md) | Personal / home use, permissions, privacy |
+| [mobile-version.md](mobile-version.md) | Mobile app, device permissions, activity timeline |
+| [future-of-agents.md](future-of-agents.md) | AI asset hierarchy beyond chat agents |
+| [data-analytics.md](data-analytics.md) | Org intelligence, conversation analytics |
+| [agent-quality-review.md](agent-quality-review.md) | Quality scores, feedback loops |
+| [voice-agents.md](voice-agents.md) | Operational / voice / incident responder agents |
+| [multilingual-agents.md](multilingual-agents.md) | Language governance and localized evals |
+| [non-llm-models.md](non-llm-models.md) | Embeddings, classifiers, multimodal dependencies |
+| [model-performance.md](model-performance.md) | Model SLOs and dependency health |
+| [agents-sunsets.md](agents-sunsets.md) | Graceful degradation, liquidation readiness |
+| [china-and-robots.md](china-and-robots.md) | Provider residency, embodied / robot governance |
+
 ---
 
 ## Phase 0: Developer experience and project trust
@@ -604,6 +621,92 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+### ⬜ Enhanced agent metadata (governed runtime asset)
+
+**What it means:** Today the registry captures basics (owner, lifecycle, risk, policies, budget, cache, dependencies, model route). Strategy docs ([meta-data.md](meta-data.md), [future-of-agents.md](future-of-agents.md)) describe modeling each agent as a **governed runtime asset** — who owns it, what it can touch, what version runs, how to disable it. This section tracks metadata gaps vs. the current YAML manifest and PostgreSQL schema.
+
+**Already captured (extend, don't duplicate):** `owner_team`, `cost_center`, `environment`, `framework`, `risk_level`, `lifecycle`, `data_classes`, `policies`, `budget`, `cache`, `dependencies`, `model routes`.
+
+**TODO items — ownership and accountability:**
+
+- [ ] Add `technical_owner`, `business_owner`, `security_reviewer`, `compliance_reviewer` fields
+- [ ] Add `oncall_contact`, `support_channel`, `escalation_policy` references
+- [ ] Expose ownership block in manifest YAML and admin console
+- [ ] Migration: `000005_agent_ownership.up.sql`
+
+**TODO items — lifecycle and approval:**
+
+- [ ] Add `approval_status`, `last_reviewed_at`, `next_review_due_at`, `retirement_date`
+- [ ] Add `change_ticket` and `release_notes` on agent version records
+- [ ] API: lifecycle promotion requires approval metadata when target is `production`
+- [ ] Align with [agents-sunsets.md](agents-sunsets.md) degradation states (`cost_saving`, `degraded`, `read_only`, `suspended`)
+
+**TODO items — versioning (agent, prompt, policy, eval):**
+
+- [ ] Add `AgentVersion` entity: `git_sha`, `container_image`, `prompt_version`, `policy_version`, `eval_suite_version`
+- [ ] Link prompt registry versions to agent versions
+- [ ] API: `GET /v1/agents/{id}/versions` with full version manifest
+
+**TODO items — runtime and deployment:**
+
+- [ ] Add `runtime` block: `hosting_platform`, `region`, `replicas`, `timeout_seconds`, `retry_policy`, `concurrency_limit`
+- [ ] Add `state_backend`, `queue_backend` references (secret refs only)
+- [ ] Support runtime metadata in manifest import
+
+**TODO items — model policy (beyond model route):**
+
+- [ ] Add `model_policy`: `allowed_models`, `forbidden_models`, `selection_strategy`, `max_context_tokens`, `max_output_tokens`
+- [ ] Add `requires_private_model`, `provider_region_constraint`
+- [ ] Track non-LLM model roles per [non-llm-models.md](non-llm-models.md): embedding, reranker, classifier, speech, vision
+- [ ] Cost metric: `cost_per_successful_task` not tokens alone
+
+**TODO items — tools, MCP, and side effects:**
+
+- [ ] Extend dependency model with `side_effect_level`, `allowed_actions`, `forbidden_actions`
+- [ ] Add `requires_human_approval`, `approval_policy`, `max_call_count_per_run` per tool
+- [ ] First-class `Tool` and `MCPServer` registry entities (see Tool/MCP registry section)
+- [ ] Typed dependency graph nodes: model, prompt, policy, eval_suite, secret, cache, workflow
+
+**TODO items — data access and residency:**
+
+- [ ] Add `data_access` block: typed sources, read/write scope, `retention_policy`, export allow/deny lists
+- [ ] Add `provider_risk` per [china-and-robots.md](china-and-robots.md): `provider_country`, `data_leaves_boundary`, `allowed_regions`
+- [ ] Query: agents touching a given data classification or external system
+
+**TODO items — risk, HITL, and runtime controls:**
+
+- [ ] Expand `risk` block: `impact_area`, capability flags (`can_spend_money`, `can_send_messages`, `can_modify_systems`)
+- [ ] Add `human_in_loop` block: triggers, approver roles, timeout, fallback on timeout
+- [ ] Add `runtime_controls`: kill switch, `quarantine_mode`, `disabled_reason`, `disabled_by`, `disabled_at`
+- [ ] Gateway enforces quarantine modes (`read_only`, `no_external_tools`, `disabled`)
+
+**TODO items — evals, observability, and quality:**
+
+- [ ] Add `evals` block: `suite_id`, `last_score`, `required_score`, `promotion_gate_required`, `canary_percent`
+- [ ] Add `observability` block: `otel_service_name`, SLO latency/success, `dashboard_url`, `alert_policy`
+- [ ] Add `quality_profile` per [agent-quality-review.md](agent-quality-review.md): multi-dimensional scores, trend, gate events
+- [ ] Wire negative user feedback → eval candidate pipeline
+
+**TODO items — multilingual and voice (enterprise):**
+
+- [ ] Add `language_profile` per [multilingual-agents.md](multilingual-agents.md): supported locales, quality-by-language, routing rules
+- [ ] Add `voice_pipeline` / `operational_agent_profile` per [voice-agents.md](voice-agents.md) for incident/responder subtypes
+- [ ] Add `agent_subtype` field: `chat`, `workflow`, `copilot`, `voice_responder`, `digital_worker`, `embodied`
+
+**TODO items — external systems registry:**
+
+- [ ] New entity: `ExternalSystem` (API, DB, model provider, SaaS) with owner, auth type, secret ref, rate limits, SLA
+- [ ] Link agents to external systems with allowed/blocked lists
+- [ ] Model performance rollups per [model-performance.md](model-performance.md) as dependency health nodes
+
+**TODO items — schema and docs:**
+
+- [ ] Publish `docs/schemas/agent-metadata-v2.yaml` reference manifest
+- [ ] ADR: governed runtime asset metadata model
+- [ ] Admin console: tabbed agent detail (Ownership, Risk, Tools, Data, Evals, Controls)
+
+---
+
 ## Phase 3: Semantic cache and evals
 
 **Goal:** Smarter caching (similar questions get similar answers), systematic quality testing for agents, and safety hooks for sensitive data.
@@ -912,6 +1015,250 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+## Phase 6: AgentVoir Home (Personal Mode)
+
+**Goal:** A lighter deployment for individuals and families — track every personal agent (coded, installed, or sourced from marketplaces like OpenClaw) with plain-English permissions, privacy controls, and cost visibility. Same registry/gateway concepts; smaller packaging (Docker Compose, SQLite option, local dashboard). See [agent-voir-home.md](agent-voir-home.md).
+
+---
+
+### ⬜ Personal deployment profile
+
+**What it means:** One user (or family) runs AgentVoir locally without enterprise infra — no Kubernetes, SSO, or multi-tenant RBAC required.
+
+**TODO items:**
+
+- [ ] Define `deployment_mode`: `enterprise` | `personal` in config
+- [ ] Personal onebox profile: SQLite or single-user Postgres, simplified OPA rules
+- [ ] `docker-compose.personal.yml` (minimal services: registry, gateway, local UI)
+- [ ] Document Personal vs Enterprise comparison table in INSTALL.md
+- [ ] Default personal budget and privacy-safe policies
+
+---
+
+### ⬜ Agent source and marketplace metadata
+
+**What it means:** Personal users install agents like browser extensions — from OpenClaw Marketplace, GitHub, npm, Docker, or friends. Provenance and update trust matter.
+
+**TODO items:**
+
+- [ ] Add `source` block to manifest: `origin_type`, `platform`, `publisher`, `source_url`, `installed_at`, `update_channel`, `auto_update_enabled`, `integrity_hash`
+- [ ] OpenClaw import profile: `skills`, `channels`, `model_providers`, `voice_enabled`, `browser_control_enabled`
+- [ ] Marketplace trust fields: `publisher_verified`, `user_rating`, `install_count`, `known_vulnerabilities`
+- [ ] UI: "Where did this agent come from?" card on agent detail
+- [ ] Warn on permission changes after agent update
+
+---
+
+### ⬜ Personal permissions (plain English)
+
+**What it means:** The most important home feature — what each agent can read, send, spend, or control on devices and services.
+
+**TODO items:**
+
+- [ ] Add `permissions` block: email, calendar, files, browser, money, home_devices (read/send/spend booleans + caps)
+- [ ] Personal risk labels: Safe / Needs review / Sensitive / Dangerous / Disabled
+- [ ] Gateway policy checks against personal permission manifest
+- [ ] UI renders permissions as plain English (not raw YAML)
+- [ ] `requires_confirmation_for` list for booking, purchases, outbound email
+
+---
+
+### ⬜ Privacy and personal budget metadata
+
+**What it means:** Personal users care about data leaving the device, retention, and surprise token bills.
+
+**TODO items:**
+
+- [ ] Add `privacy` block: `data_leaves_device`, `external_model_provider`, `retention_days`, `can_use_data_for_training`
+- [ ] Extend budget with personal alerts (`alert_at_usd` tiers), `cheaper_model_fallback`, `local_model_preferred`
+- [ ] Dashboard: "This agent sends email content to OpenAI" disclosure
+- [ ] Monthly spend by agent and by model provider
+
+---
+
+### ⬜ Home automation and physical safety
+
+**What it means:** Agents connected to lights, locks, cameras, or appliances need stricter caps than email readers.
+
+**TODO items:**
+
+- [ ] Add `home_device_access` and `physical_safety` blocks (locks, cameras, garage, appliances)
+- [ ] Policy: deny `can_unlock_doors`, `can_disable_alarm` by default
+- [ ] Personal kill switch: **Pause all agents** (global + per-agent)
+- [ ] See also embodied metadata in Phase 8 for robots
+
+---
+
+### ⬜ Personal dashboard (simple cards)
+
+**What it means:** Home UI is not enterprise governance — simple cards: name, source, access, cost, risk, pause button.
+
+**TODO items:**
+
+- [ ] Personal web UI mode (or simplified `apps/web` view)
+- [ ] Agent card: source, permissions summary, cost this month, last run, risk tier
+- [ ] One-click pause / disable / require-approval mode
+- [ ] Activity feed: what agents did today (lightweight audit)
+
+---
+
+## Phase 7: AgentVoir Mobile
+
+**Goal:** Mobile companion app — App Store–style agent inventory, permission manager, AI firewall, cost monitor, activity timeline, approval inbox, and kill switch for agents running on phones. See [mobile-version.md](mobile-version.md).
+
+---
+
+### ⬜ Mobile agent inventory
+
+**What it means:** Track which agents are installed on which devices, from which marketplace, and whether the publisher is verified.
+
+**TODO items:**
+
+- [ ] Add `mobile_profile` top-level manifest section
+- [ ] Fields: `installed_on[]`, `display_name`, `publisher`, `verified_publisher`, `status`, `version`
+- [ ] Sync protocol: mobile app ↔ AgentVoir Home / Cloud / desktop registry
+- [ ] API: register mobile-installed agent + device fingerprint
+
+---
+
+### ⬜ Mobile permissions and app integrations
+
+**What it means:** Beyond OS app permissions — agent *action* permissions (contacts, calendar, SMS, purchases, cross-app actions).
+
+**TODO items:**
+
+- [ ] Add `mobile_permissions` block: contacts, calendar, email, photos, location, wallet, SMS, phone
+- [ ] iOS App Intents allowlist: `ios_app_intents.allowed_intents[]`
+- [ ] Android App Functions allowlist: `android_app_functions.allowed_functions[]`
+- [ ] UI: permission diff when agent updates ("now requests email send")
+
+---
+
+### ⬜ Mobile activity timeline and approvals
+
+**What it means:** Screen-time-style report of what agents did — apps used, data accessed, model called, cost, approval required.
+
+**TODO items:**
+
+- [ ] Extend usage events with `activity_event` shape: apps_used, data_accessed, user_approval_required
+- [ ] Mobile API: `GET /v1/agents/{id}/activity?device_id=`
+- [ ] Approval inbox: pending external actions (send email, book travel, purchase)
+- [ ] Push notification on background agent action (configurable)
+
+---
+
+### ⬜ Mobile runtime controls
+
+**What it means:** Emergency controls users expect on a phone — pause all agents, privacy mode, background limits.
+
+**TODO items:**
+
+- [ ] Add `mobile_runtime_controls`: `allow_background_execution`, `require_approval_for_external_actions`, `emergency_pause_enabled`, `current_mode`
+- [ ] Add `background_behavior`: allowed windows, max runs/day, allowed/forbidden triggers, notify on background action
+- [ ] Add `inference_mode`: on-device vs cloud, `data_leaves_device`, `private_cloud_supported`
+- [ ] Global **Emergency privacy mode** toggles all agents to approval-required
+
+---
+
+### ⬜ AgentVoir Mobile app (MVP)
+
+**What it means:** Native or cross-platform client paired with home server or cloud sync.
+
+**TODO items:**
+
+- [ ] Mobile app scaffold (React Native or Flutter — TBD)
+- [ ] Screens: inventory, permissions, timeline, cost, approvals, kill switch
+- [ ] Pairing flow with AgentVoir Home server (QR / local network)
+- [ ] Offline read-only inventory cache
+- [ ] Biometric lock for sensitive controls
+
+---
+
+## Phase 8: AI asset intelligence and extended types
+
+**Goal:** Org-wide intelligence, quality loops, analytics, and asset types beyond chat agents — informed by [data-analytics.md](data-analytics.md), [agent-quality-review.md](agent-quality-review.md), [voice-agents.md](voice-agents.md), [agents-sunsets.md](agents-sunsets.md), and [china-and-robots.md](china-and-robots.md). Builds on Phase 2 metadata and Phase 6/7 profiles.
+
+---
+
+### ⬜ Managed AI asset types
+
+**What it means:** Registry holds not only chat agents but workflows, copilots, MCP servers, tools, eval suites, and embodied agents as first-class assets.
+
+**TODO items:**
+
+- [ ] Add `asset_type` enum: agent, workflow, copilot, assistant, bot, mcp_server, tool, model, prompt, eval_suite, digital_worker, embodied_agent
+- [ ] Shared asset base schema (owner, risk, lifecycle, kill switch, cost, quality score)
+- [ ] Subtype-specific profile extensions (voice responder, robot, sales copilot)
+- [ ] Dependency graph queries across asset types
+
+---
+
+### ⬜ AgentVoir Insights (org intelligence)
+
+**What it means:** Conversation and usage analytics for teams — cost, training gaps, SME gaps, model load — without individual employee surveillance by default.
+
+**TODO items:**
+
+- [ ] Conversation event collector with topic tags, task_type, department (aggregated)
+- [ ] Dashboards: department usage, training gap, model peak load, cost optimization, ROI
+- [ ] Privacy defaults: team-level aggregation, configurable retention, opt-in raw capture
+- [ ] Runaway-agent detection and deprecate/shutdown recommendations
+- [ ] Demo agents from [data-analytics.md](data-analytics.md) (sales, marketing, compliance)
+
+---
+
+### ⬜ Quality feedback and reputation
+
+**What it means:** Continuous quality scoring from user feedback, human review samples, and reviewer agents — gates for watch/quarantine/disable.
+
+**TODO items:**
+
+- [ ] Entities: `agent_feedback`, `agent_quality_scores`, `agent_review_jobs`, `quality_gate_events`
+- [ ] Multi-dimensional scores: accuracy, grounding, safety, policy compliance, tool-use
+- [ ] Quality gates: thresholds → mark_watch / quarantine / disable_external_tools
+- [ ] Negative feedback → eval candidate → regression test (link Phase 3 evals)
+
+---
+
+### ⬜ Voice and operational agents
+
+**What it means:** Incident responders and voice agents need escalation, runbook, war-room, and comms policies — not just chat completion metadata.
+
+**TODO items:**
+
+- [ ] `OperationalAgentProfile`: autonomy level, escalation_policy, runbook_access, war_room_behavior
+- [ ] Entities: IncidentSession, VoiceCallTranscript, EscalationDecision, HumanHandoffRecord
+- [ ] Metrics: MTTA, MTTR, escalation accuracy, unsafe action attempts
+- [ ] Post-incident artifacts → eval and policy update pipeline
+
+---
+
+### ⬜ Financial resilience and sunset
+
+**What it means:** Graceful degradation when budgets or vendors fail; export packages for M&A or shutdown.
+
+**TODO items:**
+
+- [ ] `financial_resilience` and `budget_degradation_policy` metadata
+- [ ] `continuity_plan`, `decommission_plan`, `liquidation_readiness` blocks
+- [ ] Engine: auto-degrade agent at budget thresholds (cheaper model → read_only → suspended)
+- [ ] Vendor payment failure impact report (which agents break)
+
+---
+
+### ⬜ Embodied and robot governance
+
+**What it means:** Physical agents (warehouse, delivery, home robots) need movement permissions, safety zones, emergency stop, and firmware audit trails.
+
+**TODO items:**
+
+- [ ] Add `embodied_agent_profile` / `robot_governance` block
+- [ ] Fields: robot_type, manufacturer, deployment_location, physical action permissions, safety zones, e-stop, firmware version
+- [ ] Policy layer for physical actions (separate from LLM policy)
+- [ ] Near-miss and human-override metrics
+
+---
+
 ## How to use this roadmap
 
 1. **Pick a phase** aligned with your deployment maturity (Phase 1 is the current baseline).
@@ -920,6 +1267,7 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 4. **Mark items in progress** in GitHub Issues or Projects; link PRs to specific TODO bullets.
 5. **Use AgentVoir Scout** to suggest candidate issues, label them `ai-suggested`, and manually promote approved work with `ai-code`.
 6. **Update this doc** when items are completed or scope changes.
+7. **Read strategy docs** in the table at the top when scoping metadata or new product phases (Home, Mobile).
 
 Recommended GitHub issue fields when converting a roadmap item:
 

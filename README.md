@@ -145,6 +145,7 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ Human-in-the-loop approval gates
 - ⬜ Prompt injection and tool-call security
 - 🟡 Admin web console *(MVP done; registration UI and policy viewer pending)*
+- ⬜ Enhanced agent metadata *(basics live; governed runtime asset model — see [meta-data.md](docs/meta-data.md))*
 
 ### Phase 3: Semantic cache and evals
 
@@ -170,6 +171,36 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ CI/CD integrations
 - ⬜ Data platform and notification integrations
 - ⬜ AgentVoir CLI
+
+### Phase 6: AgentVoir Home (Personal Mode)
+
+- ⬜ Personal deployment profile (Docker / SQLite, simplified policies)
+- ⬜ Agent source & marketplace metadata (OpenClaw, provenance, updates)
+- ⬜ Plain-English personal permissions and privacy disclosures
+- ⬜ Personal budget, kill switch, home device safety controls
+- ⬜ Simple personal dashboard (agent cards, pause, activity feed)
+
+See [docs/agent-voir-home.md](docs/agent-voir-home.md).
+
+### Phase 7: AgentVoir Mobile
+
+- ⬜ Mobile agent inventory and device sync
+- ⬜ Mobile permissions & App Intents / App Functions integration
+- ⬜ Activity timeline, approval inbox, background controls
+- ⬜ Emergency privacy mode and on-device vs cloud inference metadata
+- ⬜ AgentVoir Mobile app MVP
+
+See [docs/mobile-version.md](docs/mobile-version.md).
+
+### Phase 8: AI asset intelligence and extended types
+
+- ⬜ Managed AI asset types (workflow, MCP, tool, embodied agent, …)
+- ⬜ AgentVoir Insights (org analytics, training gaps — privacy-first)
+- ⬜ Quality feedback, reputation scores, and quality gates
+- ⬜ Voice / operational / incident-responder profiles
+- ⬜ Financial resilience, sunset, and robot governance metadata
+
+See [docs/data-analytics.md](docs/data-analytics.md), [docs/agent-quality-review.md](docs/agent-quality-review.md), [docs/voice-agents.md](docs/voice-agents.md).
 
 ---
 
