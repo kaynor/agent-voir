@@ -17,7 +17,7 @@
 
 It helps enterprises **register agents**, **govern model/tool access**, **track token usage and cost**, **map dependencies**, **enforce policy-as-code**, and **cache repeated LLM requests** through an OpenAI-compatible proxy.
 
-> Status: Phase 1 complete; Phase 2 showcase v2 (rate limits, provider fallback, budget status, policy simulate) ready for release.
+> Status: Phase 1 complete; Phase 2 in progress — showcase v2 governance shipped, OIDC foundation live, full enterprise controls and governed metadata expansion ongoing.
 
 ![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
 
@@ -89,6 +89,8 @@ See **[docs/development-roadmap.md](docs/development-roadmap.md)** for plain-lan
 
 Status: ✅ done · 🟡 partial · ⬜ not started · 🔒 blocked
 
+**Strategy docs** (product direction — inform the phases below): [meta-data.md](docs/meta-data.md), [agent-voir-home.md](docs/agent-voir-home.md), [mobile-version.md](docs/mobile-version.md), [future-of-agents.md](docs/future-of-agents.md), [data-analytics.md](docs/data-analytics.md), [agent-quality-review.md](docs/agent-quality-review.md), [voice-agents.md](docs/voice-agents.md), [multilingual-agents.md](docs/multilingual-agents.md), [non-llm-models.md](docs/non-llm-models.md), [model-performance.md](docs/model-performance.md), [agents-sunsets.md](docs/agents-sunsets.md), [china-and-robots.md](docs/china-and-robots.md).
+
 ### Phase 0: Developer experience and project trust
 
 - ✅ Quickstart smoke test
@@ -112,7 +114,7 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 
 ### Phase 2: Enterprise controls
 
-**GitHub showcase track** (`make showcase`, [docs/demo/](docs/demo/)):
+**GitHub showcase track** (`make showcase`, [docs/demo/](docs/demo/)) — v2 ready for release:
 
 - ✅ Gateway OPA policy check (403 on deny)
 - ✅ Gateway monthly budget enforcement (429 on exceed)
@@ -120,32 +122,36 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ✅ Provider routing fallback (primary → backup on failure)
 - ✅ Budget utilization API (`GET /v1/agents/{id}/budget/status`)
 - ✅ Policy simulation API (`POST /v1/policies/simulate`)
-- ✅ Agent policies persisted from YAML manifest
-- ✅ Governance demo scripts (`demo-policy-denial`, `demo-budget-block`, `demo-rate-limit`, `demo-fallback`, `demo-budget-status`, `demo-policy-simulate`)
+- ✅ Agent policies, budgets, and model routes persisted from YAML manifest
+- ✅ Governance demo scripts and example agents (`rate-limit-demo-agent`, `fallback-demo-agent`)
 - ✅ Admin web console MVP (dashboard, agent list, agent detail)
 - ✅ Grafana overview dashboard (cache, policy, budget metrics)
 - ✅ Cache-friendly quickstart path (`cache-demo-agent`, miss → hit)
 - ⬜ README screenshots / GIF of admin console
-- ⬜ Publish GitHub Release with showcase v2 features (GHCR + onebox bundle)
+- ⬜ Publish GitHub Release with showcase v2 features (GHCR tag + onebox bundle)
 
 **Full enterprise controls** (ongoing):
 
-- 🟡 OIDC authentication *(JWT on registry + gateway; Dex onebox overlay; RBAC pending)*
+- ⬜ OIDC authentication *(JWT on registry + gateway, Dex onebox; M2M flow and API-key gating pending)*
 - ⬜ RBAC and service accounts
+- ⬜ Secret and credential governance
 - 🟡 Per-agent budgets *(monthly cap + utilization API; per-request token cap pending)*
 - 🟡 Per-agent and per-tenant rate limits *(requests/minute enforced; tokens/minute pending)*
 - ⬜ Audit logging
-- 🟡 Policy-as-code engine *(gateway OPA live; registry simulate endpoint live; mutation policies pending)*
+- 🟡 Policy-as-code engine *(gateway OPA + simulate live; registry mutation policies pending)*
 - 🟡 Provider routing and fallback *(primary_then_fallback live; round_robin pending)*
+- ⬜ Model/provider catalog and pricing drift monitor
 - ⬜ Provider adapter conformance suite
 - 🟡 Dependency graph API
 - ⬜ Tool and MCP server registry
+- ⬜ Tool execution sandbox and permission broker
+- ⬜ Agent discovery and shadow-agent scanner
 - 🟡 OpenTelemetry traces and Prometheus metrics *(gateway `/metrics` + Grafana live; OTel traces pending)*
 - ⬜ Pre-flight token and cost estimation
 - ⬜ Human-in-the-loop approval gates
 - ⬜ Prompt injection and tool-call security
-- 🟡 Admin web console *(MVP done; registration UI and policy viewer pending)*
-- ⬜ Enhanced agent metadata *(basics live; governed runtime asset model — see [meta-data.md](docs/meta-data.md))*
+- 🟡 Admin web console *(MVP done; registration UI, policy viewer, approval queue pending)*
+- ⬜ Enhanced agent metadata *(governed runtime asset model — see [meta-data.md](docs/meta-data.md))*
 
 ### Phase 3: Semantic cache and evals
 
@@ -154,8 +160,11 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ Cache shadow mode
 - 🟡 Prompt registry
 - ⬜ Eval datasets and regression runner
+- ⬜ Data lineage, evidence, and provenance
 - ⬜ Agent scorecards
+- ⬜ Red-team and adversarial test harness
 - ⬜ PII / secret detection hooks
+- ⬜ Agent memory and knowledge-base governance
 
 ### Phase 4: Kubernetes-native control plane
 
@@ -164,10 +173,12 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ Admission controller
 - ⬜ GitOps examples
 - ⬜ Multi-region routing examples
+- ⬜ Backup, restore, and disaster recovery
 
 ### Phase 5: Ecosystem and integrations
 
 - ⬜ Framework integrations
+- ⬜ Agent contract and interoperability validation
 - ⬜ CI/CD integrations
 - ⬜ Data platform and notification integrations
 - ⬜ AgentVoir CLI
@@ -175,20 +186,23 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 ### Phase 6: AgentVoir Home (Personal Mode)
 
 - ⬜ Personal deployment profile (Docker / SQLite, simplified policies)
-- ⬜ Agent source & marketplace metadata (OpenClaw, provenance, updates)
-- ⬜ Plain-English personal permissions and privacy disclosures
-- ⬜ Personal budget, kill switch, home device safety controls
-- ⬜ Simple personal dashboard (agent cards, pause, activity feed)
+- ⬜ Agent source and marketplace metadata (OpenClaw, provenance, updates)
+- ⬜ Marketplace and third-party agent security scanner
+- ⬜ Personal permissions (plain English)
+- ⬜ Privacy and personal budget metadata
+- ⬜ Home automation and physical safety
+- ⬜ Personal dashboard (simple cards)
+- ⬜ Browser extension and desktop agent monitor
 
 See [docs/agent-voir-home.md](docs/agent-voir-home.md).
 
 ### Phase 7: AgentVoir Mobile
 
-- ⬜ Mobile agent inventory and device sync
-- ⬜ Mobile permissions & App Intents / App Functions integration
-- ⬜ Activity timeline, approval inbox, background controls
-- ⬜ Emergency privacy mode and on-device vs cloud inference metadata
-- ⬜ AgentVoir Mobile app MVP
+- ⬜ Mobile agent inventory
+- ⬜ Mobile permissions and app integrations (App Intents / App Functions)
+- ⬜ Mobile activity timeline and approvals
+- ⬜ Mobile runtime controls (background limits, emergency privacy mode)
+- ⬜ AgentVoir Mobile app (MVP)
 
 See [docs/mobile-version.md](docs/mobile-version.md).
 
@@ -196,11 +210,13 @@ See [docs/mobile-version.md](docs/mobile-version.md).
 
 - ⬜ Managed AI asset types (workflow, MCP, tool, embodied agent, …)
 - ⬜ AgentVoir Insights (org analytics, training gaps — privacy-first)
-- ⬜ Quality feedback, reputation scores, and quality gates
-- ⬜ Voice / operational / incident-responder profiles
-- ⬜ Financial resilience, sunset, and robot governance metadata
+- ⬜ Quality feedback and reputation
+- ⬜ Voice and operational agents
+- ⬜ Consent, disclosure, and communication compliance
+- ⬜ Financial resilience and sunset
+- ⬜ Embodied and robot governance
 
-See [docs/data-analytics.md](docs/data-analytics.md), [docs/agent-quality-review.md](docs/agent-quality-review.md), [docs/voice-agents.md](docs/voice-agents.md).
+See [docs/data-analytics.md](docs/data-analytics.md), [docs/agent-quality-review.md](docs/agent-quality-review.md), [docs/voice-agents.md](docs/voice-agents.md), [docs/agents-sunsets.md](docs/agents-sunsets.md), [docs/china-and-robots.md](docs/china-and-robots.md).
 
 ---
 

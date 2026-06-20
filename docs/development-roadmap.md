@@ -20,20 +20,24 @@ For infrastructure component context (ClickHouse, OPA, Prometheus, Grafana), see
 
 **Strategy and metadata discussions** (product direction — inform phases below):
 
-| Document | Topic |
-| -------- | ----- |
-| [meta-data.md](meta-data.md) | Enterprise metadata model for governed runtime assets |
-| [agent-voir-home.md](agent-voir-home.md) | Personal / home use, permissions, privacy |
-| [mobile-version.md](mobile-version.md) | Mobile app, device permissions, activity timeline |
-| [future-of-agents.md](future-of-agents.md) | AI asset hierarchy beyond chat agents |
-| [data-analytics.md](data-analytics.md) | Org intelligence, conversation analytics |
-| [agent-quality-review.md](agent-quality-review.md) | Quality scores, feedback loops |
-| [voice-agents.md](voice-agents.md) | Operational / voice / incident responder agents |
-| [multilingual-agents.md](multilingual-agents.md) | Language governance and localized evals |
-| [non-llm-models.md](non-llm-models.md) | Embeddings, classifiers, multimodal dependencies |
-| [model-performance.md](model-performance.md) | Model SLOs and dependency health |
-| [agents-sunsets.md](agents-sunsets.md) | Graceful degradation, liquidation readiness |
-| [china-and-robots.md](china-and-robots.md) | Provider residency, embodied / robot governance |
+
+| Document                                           | Topic                                                 |
+| -------------------------------------------------- | ----------------------------------------------------- |
+| [meta-data.md](meta-data.md)                       | Enterprise metadata model for governed runtime assets |
+| [agent-voir-home.md](agent-voir-home.md)           | Personal / home use, permissions, privacy             |
+| [mobile-version.md](mobile-version.md)             | Mobile app, device permissions, activity timeline     |
+| [future-of-agents.md](future-of-agents.md)         | AI asset hierarchy beyond chat agents                 |
+| [data-analytics.md](data-analytics.md)             | Org intelligence, conversation analytics              |
+| [agent-quality-review.md](agent-quality-review.md) | Quality scores, feedback loops                        |
+| [voice-agents.md](voice-agents.md)                 | Operational / voice / incident responder agents       |
+| [multilingual-agents.md](multilingual-agents.md)   | Language governance and localized evals               |
+| [non-llm-models.md](non-llm-models.md)             | Embeddings, classifiers, multimodal dependencies      |
+| [model-performance.md](model-performance.md)       | Model SLOs and dependency health                      |
+| [agents-sunsets.md](agents-sunsets.md)             | Graceful degradation, liquidation readiness           |
+| [china-and-robots.md](china-and-robots.md)         | Provider residency, embodied / robot governance       |
+
+
+These phase items now also include automatic discovery, provenance, sandboxing, secret governance, marketplace security scanning, backup/DR, consent tracking, model catalog drift, browser/desktop monitoring, memory governance, red-team testing, and agent contract validation.
 
 ---
 
@@ -106,7 +110,7 @@ Run `./scripts/bootstrap-github-labels.sh` and `./scripts/bootstrap-github-issue
 - [x] Add examples for authentication, agent registration, gateway calls, usage queries, and policy simulation
 - [x] Add SDK examples that map to each API section
 
-Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --profile docs up -d` → http://localhost:8089
+Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --profile docs up -d` → [http://localhost:8089](http://localhost:8089)
 
 ---
 
@@ -298,7 +302,7 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 
 ### GitHub showcase track (v2 — ready for release)
 
-High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showcase`** after onebox is up.
+High-impact items for visitors evaluating AgentVoir on GitHub. Run `**make showcase`** after onebox is up.
 
 **Governance (gateway + registry):**
 
@@ -361,6 +365,24 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] Wire RBAC checks into gateway for sensitive operations
 - [ ] Add audit log entry on permission denied events
 - [ ] Document default roles and recommended enterprise mappings
+
+---
+
+### ⬜ Secret and credential governance
+
+**What it means:** Agent capabilities often come from credentials. If an agent has a Slack token, GitHub token, cloud IAM role, SaaS OAuth grant, or banking API key, that credential becomes part of the agent's risk profile. AgentVoir should never store secrets directly, but it should track secret references, ownership, scope, rotation, and blast radius.
+
+**TODO items:**
+
+- [ ] Add `SecretRef` entity: provider, path, owner, environment, expiration, rotation interval, scopes
+- [ ] Link secret refs to agents, tools, MCP servers, model providers, and external systems
+- [ ] Add secret scope metadata: read-only, write, admin, payment, production, customer-data
+- [ ] Add secret rotation status and expiry alerts
+- [ ] Add policy: production agents cannot depend on expired or unowned secrets
+- [ ] Add blast-radius query: "which agents depend on this secret?"
+- [ ] Add emergency revoke workflow: revoke secret → quarantine affected agents → notify owners
+- [ ] Add secret leakage detector in prompts, responses, traces, and logs
+- [ ] Add integration examples for Vault, AWS Secrets Manager, GCP Secret Manager, Azure Key Vault, Doppler, and 1Password
 
 ---
 
@@ -463,6 +485,24 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+### ⬜ Model/provider catalog and pricing drift monitor
+
+**What it means:** Model prices, terms, context windows, regions, rate limits, and capabilities change frequently. Hardcoded pricing tables and static model assumptions will drift. AgentVoir should maintain a first-class catalog of provider/model capabilities and alert when price, capability, terms, or deprecation changes affect agents.
+
+**TODO items:**
+
+- [ ] Add `ModelCatalog` entity: provider, model, modality, context window, tool support, JSON mode, streaming, region support
+- [ ] Add pricing history table: input token price, output token price, cached-token price, image/audio/video price
+- [ ] Add provider terms metadata: data-retention policy, training policy, region availability, enterprise plan requirement
+- [ ] Add model deprecation date and replacement model recommendation
+- [ ] Add scheduled pricing update workflow with manual approval
+- [ ] Add alert when provider price changes affect monthly budget projections
+- [ ] Add model capability diff: "new version changes context window/tool support"
+- [ ] Add policy: block deprecated models for production agents after cutoff date
+- [ ] Add provider health dashboard: latency, error rate, rate-limit rate, cost trend, fallback usage
+
+---
+
 ### ⬜ Provider adapter conformance suite
 
 **What it means:** Every model provider adapter should behave consistently so routing, caching, cost tracking, streaming, and fallback work the same way across OpenAI, Anthropic, Azure OpenAI, Gemini, Bedrock, and local models.
@@ -520,6 +560,48 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] Add "disable tool globally" kill switch
 - [ ] Add docs: "Registering MCP servers and tools"
 - [ ] Add example MCP server manifest
+
+---
+
+### ⬜ Tool execution sandbox and permission broker
+
+**What it means:** Listing tools is not enough. Tool calls are where agents can change real systems, leak data, spend money, or damage production. AgentVoir should mediate high-risk tool execution through a broker that enforces policy, validates arguments, limits runtime, controls egress, and records side effects.
+
+**TODO items:**
+
+- [ ] Define `ToolExecutionBroker` service boundary
+- [ ] Route registered tool calls through broker instead of direct agent-to-tool calls
+- [ ] Add argument schema validation before execution
+- [ ] Add network egress allowlist per tool and per agent
+- [ ] Add filesystem sandbox policy for code/file tools
+- [ ] Add command allowlist/denylist for shell/code-execution tools
+- [ ] Add per-tool timeout, memory, CPU, and output-size limits
+- [ ] Add side-effect ledger: external system changed, before/after if available, rollback hint
+- [ ] Add dry-run mode for tools that support preview
+- [ ] Add tool output classification: public/internal/confidential/PII/secret
+- [ ] Add global tool kill switch and per-agent tool quarantine
+- [ ] Add sample sandbox adapter for MCP tools
+
+---
+
+### ⬜ Agent discovery and shadow-agent scanner
+
+**What it means:** Real organizations and personal environments will have agents that were never manually registered. AgentVoir should discover unknown agents, LLM callers, MCP servers, tool configs, and AI workflows from repos, Kubernetes workloads, gateway traffic, package manifests, local configs, and browser extensions.
+
+**TODO items:**
+
+- [ ] Add `AgentDiscoverySource` entity: GitHub repo, Kubernetes cluster, Docker container, browser extension, local file path, cloud logs, proxy logs, mobile device
+- [ ] Build GitHub repository scanner for common frameworks: LangChain, LangGraph, CrewAI, AutoGen, LlamaIndex, Vercel AI SDK, OpenAI Agents SDK
+- [ ] Detect MCP server configs and tool manifests from repos and local filesystem
+- [ ] Detect direct provider SDK usage: OpenAI, Anthropic, Gemini, Bedrock, OpenRouter, Azure OpenAI
+- [ ] Detect missing `x-agent-id` gateway traffic and create "unregistered caller" candidates
+- [ ] Add Kubernetes scanner for deployments with LLM provider API keys or agent framework packages
+- [ ] Add Docker Compose scanner for local/personal mode
+- [ ] Add browser extension scanner for AI extensions in AgentVoir Personal
+- [ ] Add confidence score for discovered agent candidates
+- [ ] Add UI workflow: review discovered agents → approve registration → assign owner/risk tier
+- [ ] Add policy: block or warn on production LLM calls from unregistered agents
+- [ ] Add scheduled discovery job and discovery history
 
 ---
 
@@ -806,6 +888,26 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+### ⬜ Data lineage, evidence, and provenance
+
+**What it means:** Quality scores and evals say whether an agent performed well, but regulated and high-risk agents also need to prove where an answer came from. AgentVoir should capture the chain of influence: prompt version, model version, retrieved documents, tool responses, policy decisions, human approvals, and final output.
+
+**TODO items:**
+
+- [ ] Define `AgentOutputProvenance` schema
+- [ ] Capture prompt version, model/provider version, policy version, eval suite version, and tool schema version per run
+- [ ] Capture RAG document IDs, chunk IDs, embedding model, retrieval score, reranker score, and corpus version
+- [ ] Capture external API response hashes instead of storing sensitive full payloads by default
+- [ ] Add evidence bundle export: `GET /v1/runs/{runID}/evidence-bundle`
+- [ ] Add output citation contract for agents that must provide source-backed answers
+- [ ] Add policy: high-risk agents must attach evidence bundle before final response
+- [ ] Add UI evidence timeline: request → retrieval → tool calls → policy decisions → output
+- [ ] Add freshness metadata for knowledge sources and retrieved documents
+- [ ] Add provenance redaction rules for PII, secrets, and confidential documents
+- [ ] Add tamper-evident hash chain for critical run provenance records
+
+---
+
 ### ⬜ Agent scorecards
 
 **What it means:** A report card for each agent summarizing health — cost trend, error rate, cache hit rate, eval scores, policy violations, and budget utilization. Helps managers and owners see which agents are healthy and which need attention.
@@ -820,6 +922,23 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] Render scorecard in web console
 - [ ] Optional: email/Slack weekly scorecard digest to agent owners
 - [ ] Benchmark and trend comparison vs previous period
+
+---
+
+### ⬜ Red-team and adversarial test harness
+
+**What it means:** Prompt injection, jailbreaks, tool escalation, cache poisoning, and data exfiltration should be tested continuously, not only handled by runtime hooks. AgentVoir should provide repeatable security test packs and make them part of promotion gates.
+
+**TODO items:**
+
+- [ ] Define red-team scenario format: attack prompt, untrusted source, expected policy behavior, expected refusal/action
+- [ ] Add built-in attack packs: prompt injection, secret exfiltration, tool escalation, cache poisoning, jailbreak, data export abuse
+- [ ] Run red-team suites through gateway and policy engine
+- [ ] Store red-team run results alongside eval runs
+- [ ] Gate production promotion on passing required red-team pack
+- [ ] Add regression cases automatically from real policy violations
+- [ ] Dashboard: security pass rate, top failing attack categories
+- [ ] CLI: `agentvoir redteam run --agent <id> --pack prompt-injection-basic`
 
 ---
 
@@ -839,6 +958,24 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] Build `pii-redactor` service plugin for pluggable detectors
 - [ ] Add false-positive tuning configuration per tenant
 - [ ] Document compliance implications and data handling
+
+---
+
+### ⬜ Agent memory and knowledge-base governance
+
+**What it means:** Agent memory can become sensitive, stale, or legally restricted. RAG corpora can contain outdated, private, or customer data. AgentVoir should treat memory stores and knowledge bases as governed assets with ownership, retention, freshness, deletion, portability, and access controls.
+
+**TODO items:**
+
+- [ ] Add `MemoryStore` entity: owner, backend, data classes, retention, deletion policy, embedding model
+- [ ] Add `KnowledgeBase` entity: source systems, refresh schedule, corpus version, last indexed time, data classification
+- [ ] Link agents to memory stores and knowledge bases in dependency graph
+- [ ] Add policy: high-risk agents cannot use unreviewed memory stores
+- [ ] Add memory deletion API for personal mode and privacy requests
+- [ ] Add stale knowledge alert when corpus has not refreshed within SLA
+- [ ] Add RAG ingestion audit: document added/removed, source, timestamp, actor
+- [ ] Add memory export/import with redaction for backup and portability
+- [ ] Add admin UI tab for Memory and Knowledge Sources
 
 ---
 
@@ -939,6 +1076,25 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+### ⬜ Backup, restore, and disaster recovery
+
+**What it means:** AgentVoir becomes a control plane. Losing registry data, policies, audit history, usage records, or approval state could break operations and compliance. AgentVoir needs tested export/import, backup, restore, and disaster-recovery flows for both enterprise and personal deployments.
+
+**TODO items:**
+
+- [ ] Add full registry export: agents, prompts, policies, dependencies, budgets, model routes, tool registry, external systems
+- [ ] Add selective export: one agent and its dependency bundle
+- [ ] Add encrypted local backup for AgentVoir Personal
+- [ ] Add Postgres backup/restore guide and scripts
+- [ ] Add ClickHouse usage/audit backup and retention strategy
+- [ ] Add restore smoke test in CI using sample backup
+- [ ] Add disaster recovery runbook: registry down, gateway degraded, provider outage, database restore
+- [ ] Add `agentvoir backup create` and `agentvoir backup restore` CLI commands
+- [ ] Add backup integrity verification using hashes/signatures
+- [ ] Add admin UI backup status and last successful restore-test timestamp
+
+---
+
 ## Phase 5: Ecosystem and integrations
 
 **Goal:** Make AgentVoir useful inside real enterprise AI stacks by integrating with agent frameworks, CI/CD systems, observability tools, and data platforms.
@@ -959,6 +1115,22 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] OpenAI Agents SDK integration example if useful
 - [ ] Framework compatibility matrix in docs
 - [ ] Example apps for each supported framework
+
+---
+
+### ⬜ Agent contract and interoperability validation
+
+**What it means:** AgentVoir will integrate with many frameworks and may allow agents to call other agents. Each agent should have a machine-readable contract: input shape, output shape, error shape, side effects, idempotency, timeout, and failure modes.
+
+**TODO items:**
+
+- [ ] Add `AgentContract` entity: input schema, output schema, error schema, side effects, idempotency, timeout
+- [ ] Add contract validation API for agent outputs
+- [ ] Add contract conformance tests for registered agents
+- [ ] Add compatibility mapping for OpenAPI, JSON Schema, MCP tool schemas, App Intents, and Android App Functions
+- [ ] Add policy: agents with downstream dependents cannot change contract without review
+- [ ] Add semantic versioning rules for agent contracts
+- [ ] Add contract diff UI and breaking-change warning
 
 ---
 
@@ -1049,6 +1221,25 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+### ⬜ Marketplace and third-party agent security scanner
+
+**What it means:** Personal and enterprise users may import agents from OpenClaw-like marketplaces, GitHub, Docker images, npm packages, Python packages, or vendors. AgentVoir should inspect third-party agents before granting trust.
+
+**TODO items:**
+
+- [ ] Add marketplace import scanner for OpenClaw-like platforms, GitHub repos, Docker images, npm packages, and Python packages
+- [ ] Add permission diff analyzer: new version requests email-send, file-write, browser-control, purchase, or home-device access
+- [ ] Add suspicious endpoint detection: unknown domains, paste sites, disposable webhooks, raw IPs
+- [ ] Add dependency vulnerability scan for imported agent packages
+- [ ] Add license scan for imported agent code and assets
+- [ ] Add SBOM ingestion for third-party agent packages
+- [ ] Add publisher trust score and verification status
+- [ ] Add user warning: "This agent can send emails and access browser forms"
+- [ ] Add quarantine mode for newly imported agents until reviewed
+- [ ] Add auto-update policy: disabled by default for high-risk agents
+
+---
+
 ### ⬜ Personal permissions (plain English)
 
 **What it means:** The most important home feature — what each agent can read, send, spend, or control on devices and services.
@@ -1099,6 +1290,23 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] Agent card: source, permissions summary, cost this month, last run, risk tier
 - [ ] One-click pause / disable / require-approval mode
 - [ ] Activity feed: what agents did today (lightweight audit)
+
+---
+
+### ⬜ Browser extension and desktop agent monitor
+
+**What it means:** Before agents are deeply integrated into mobile operating systems, many personal agents will operate through browsers, browser extensions, local desktop apps, and web automation. AgentVoir should provide a companion that shows active agents, captures approvals, and monitors risky browser actions.
+
+**TODO items:**
+
+- [ ] Browser extension MVP for Chrome/Edge/Firefox
+- [ ] Detect AI agents/extensions installed in browser where possible
+- [ ] Add approval prompt for risky browser actions: form submit, purchase, file upload, password field interaction
+- [ ] Add activity capture: website domain, action category, agent ID, approval status
+- [ ] Add policy: block agents from entering passwords or payment details without explicit approval
+- [ ] Add local desktop tray app for pause-all/approval inbox
+- [ ] Pair browser extension with AgentVoir Personal server
+- [ ] Show browser-agent activity in personal dashboard timeline
 
 ---
 
@@ -1230,6 +1438,25 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 - [ ] Entities: IncidentSession, VoiceCallTranscript, EscalationDecision, HumanHandoffRecord
 - [ ] Metrics: MTTA, MTTR, escalation accuracy, unsafe action attempts
 - [ ] Post-incident artifacts → eval and policy update pipeline
+
+---
+
+### ⬜ Consent, disclosure, and communication compliance
+
+**What it means:** Voice, mobile, customer-support, healthcare, finance, and incident-response agents may communicate with real people. AgentVoir needs proof that AI identity was disclosed, recording/transcription consent was captured where required, and regulated communications followed approval policy.
+
+**TODO items:**
+
+- [ ] Add `ConsentRecord` entity: subject, channel, consent type, jurisdiction, timestamp, expiration, revocation status
+- [ ] Add `AIDisclosurePolicy` entity: required wording, locale, channel, version
+- [ ] Capture whether AI identity was disclosed at start of call/chat/email
+- [ ] Capture recording/transcription consent for voice and meeting agents
+- [ ] Add locale-specific disclosure templates for multilingual agents
+- [ ] Add policy: voice agents cannot record/transcribe unless consent requirements are met
+- [ ] Add policy: agents cannot contact external humans unless communication policy allows it
+- [ ] Add customer-facing message approval workflow for regulated communications
+- [ ] Add consent revocation handling: stop memory usage, delete eligible records, disable future outreach
+- [ ] Add audit export for consent/disclosure history
 
 ---
 
