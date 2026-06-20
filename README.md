@@ -20,6 +20,7 @@ It helps enterprises **register agents**, **govern model/tool access**, **track 
 > Status: Phase 1 complete; Phase 2 in progress — showcase v2 governance shipped, OIDC foundation live, full enterprise controls and governed metadata expansion ongoing.
 
 ![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
+![AgentVoir In-Plan Dashboard](docs/architecture/agent-voir-dashboard-01.png)
 
 
 ## Why AgentVoir?
