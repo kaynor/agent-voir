@@ -31,6 +31,8 @@ Each OpenAPI file defines multiple `servers` entries (localhost, 127.0.0.1, alte
 
 **Gateway auth:** click **Authorize**, enter `agentvoir-onebox-key` (or your `GATEWAY_API_KEY`), and add header `x-agent-id` on chat requests.
 
+**Live Proxy Flow ops endpoints** (`GET /v1/proxy-events`, `GET /v1/traces/{id}`, `WS /ws/proxy-events`) skip API key auth for browser read access. `POST /v1/proxy-events/seed` requires the gateway key.
+
 **CORS / “URL scheme must be http or https” error**
 
 This usually means Swagger could not resolve a valid server URL. Fix:

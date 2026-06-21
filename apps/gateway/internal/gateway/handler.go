@@ -15,6 +15,7 @@ import (
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/pricing"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/proxyevents"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/ratelimit"
 	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
@@ -31,6 +32,7 @@ type Handler struct {
 	policy        policy.Evaluator
 	rateLimit     *ratelimit.Limiter
 	usage         usage.Recorder
+	proxyEvents   *proxyevents.Recorder
 }
 
 func NewHandler(
@@ -42,6 +44,7 @@ func NewHandler(
 	policyEvaluator policy.Evaluator,
 	rateLimiter *ratelimit.Limiter,
 	usageRecorder usage.Recorder,
+	proxyRecorder *proxyevents.Recorder,
 ) *Handler {
 	if usageRecorder == nil {
 		usageRecorder = usage.NopRecorder{}
@@ -58,6 +61,7 @@ func NewHandler(
 		policy:        policyEvaluator,
 		rateLimit:     rateLimiter,
 		usage:         usageRecorder,
+		proxyEvents:   proxyRecorder,
 	}
 }
 
@@ -417,6 +421,23 @@ func (h *Handler) recordUsage(
 		StatusCode:       uint16(statusCode),
 		ErrorCode:        errorCode,
 	})
+
+	if h.proxyEvents != nil {
+		h.proxyEvents.RecordFromRequest(proxyevents.RecordInput{
+			TraceID:     traceID,
+			AgentID:     agentID,
+			UserID:      strings.TrimSpace(r.Header.Get(middleware.HeaderUserID)),
+			Provider:    provider,
+			Model:       model,
+			CacheStatus: cacheStatus,
+			TokensIn:    promptTokens,
+			TokensOut:   completionTokens,
+			CostUSD:     costUSD,
+			DurationMS:  time.Since(started).Milliseconds(),
+			StatusCode:  statusCode,
+			ErrorCode:   errorCode,
+		})
+	}
 }
 
 func maxInt64(value int64, floor int64) int64 {

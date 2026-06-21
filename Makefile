@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-up-oidc onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean showcase demo-policy demo-budget demo-rate-limit demo-fallback demo-budget-status demo-policy-simulate demo-oidc seed-demo wait-for-onebox test-migrations
+.PHONY: help dev-up dev-up-all dev-down dev-logs dev-docs onebox-up onebox-up-build onebox-up-oidc onebox-down onebox-logs onebox-reset onebox-smoke quickstart run-gateway run-api run-token-accounting run-web db-migrate fmt test lint clean showcase demo-policy demo-budget demo-rate-limit demo-fallback demo-budget-status demo-policy-simulate demo-oidc seed-demo seed-live-events demo-live-dashboard wait-for-onebox test-migrations
 
 ONEBOX_COMPOSE := deployments/docker/docker-compose.onebox.yml
 ONEBOX_BUILD_COMPOSE := deployments/docker/docker-compose.onebox.build.yml
@@ -24,7 +24,9 @@ help:
 	@echo "  make demo-oidc            OIDC JWT auth demo (requires Dex overlay)"
 	@echo "  make onebox-up-oidc       Start onebox with Dex OIDC overlay"
 	@echo "  make showcase             quickstart + all governance demos"
-	@echo "  make run-web              Admin console at http://localhost:3000"
+	@echo "  make seed-live-events     Load dummy proxy-event rows for Live dashboard"
+	@echo "  make demo-live-dashboard  Seed + verify proxy-events API (for /live UI)"
+	@echo "  make run-web              Admin console at http://localhost:3000/live"
 	@echo "  make dev-docs             Start local Swagger UI for API specs (:8089)"
 	@echo "  make dev-up               Start local infrastructure (Postgres, Redis, ClickHouse, ...)"
 	@echo "  make dev-up-all           Start infrastructure + AgentVoir apps in Docker"
@@ -139,6 +141,14 @@ seed-demo:
 	@chmod +x scripts/seed-demo.sh
 	@./scripts/seed-demo.sh
 
+seed-live-events:
+	@chmod +x scripts/seed-live-events.sh
+	@./scripts/seed-live-events.sh
+
+demo-live-dashboard:
+	@chmod +x scripts/demo-live-dashboard.sh scripts/seed-live-events.sh scripts/wait-for-onebox.sh
+	@./scripts/demo-live-dashboard.sh
+
 wait-for-onebox:
 	@chmod +x scripts/wait-for-onebox.sh
 	@./scripts/wait-for-onebox.sh
@@ -157,7 +167,12 @@ run-token-accounting:
 	cd services/token-accounting && go run ./cmd/token-accounting
 
 run-web:
-	cd apps/web && npm install && REGISTRY_API_URL=http://localhost:8081 TOKEN_ACCOUNTING_URL=http://localhost:8082 npm run dev
+	cd apps/web && npm install && \
+		REGISTRY_API_URL=http://localhost:8081 \
+		TOKEN_ACCOUNTING_URL=http://localhost:8082 \
+		NEXT_PUBLIC_GATEWAY_URL=http://localhost:8080 \
+		NEXT_PUBLIC_GATEWAY_WS_URL=ws://localhost:8080/ws/proxy-events \
+		npm run dev
 
 fmt:
 	gofmt -w apps/gateway apps/registry-api services/token-accounting packages/sdk-go || true

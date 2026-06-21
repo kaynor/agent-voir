@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <>
+    <div className="shell">
       <section className="hero">
         <p className="eyebrow">Admin Console</p>
         <h1>Govern agents, cost, and cache in one place</h1>
@@ -86,6 +86,6 @@ export default async function DashboardPage() {
           </section>
         </>
       ) : null}
-    </>
+    </div>
   );
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/middleware"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/policy"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/providers"
+	"github.com/agentvoir/agentvoir/apps/gateway/internal/proxyevents"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/ratelimit"
 	agentregistry "github.com/agentvoir/agentvoir/apps/gateway/internal/registry"
 	"github.com/agentvoir/agentvoir/apps/gateway/internal/usage"
@@ -57,6 +58,10 @@ func main() {
 		log.Printf("AgentVoir gateway enforcing per-agent rate limits via Redis at %s", config.RedisAddr)
 	}
 
+	proxyStore := proxyevents.NewMemoryStore(5000)
+	proxyRecorder := proxyevents.NewRecorder(proxyStore)
+	proxyHandler := proxyevents.NewHandler(proxyStore)
+
 	handler := gateway.NewHandler(
 		config,
 		cacheStore,
@@ -66,12 +71,14 @@ func main() {
 		policyEvaluator,
 		rateLimiter,
 		usage.NewRecorder(config.TokenAccountingURL),
+		proxyRecorder,
 	)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthz)
 	mux.Handle("/metrics", metrics.Handler())
 	handler.RegisterRoutes(mux)
+	proxyHandler.RegisterRoutes(mux)
 
 	authCfg := middleware.LoadAuthConfig()
 	if !authCfg.Enabled() && config.APIKey != "" {
@@ -87,7 +94,7 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr:              config.Addr,
+		Addr: config.Addr,
 		Handler:           middleware.DevCORS(middleware.Auth(authCfg)(mux)),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -99,6 +106,7 @@ func main() {
 	if config.TokenAccountingURL != "" {
 		log.Printf("AgentVoir gateway emitting usage events to %s", config.TokenAccountingURL)
 	}
+	log.Printf("AgentVoir gateway proxy-events API at GET /v1/proxy-events, WS /ws/proxy-events")
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("gateway failed: %v", err)
 	}

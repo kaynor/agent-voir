@@ -94,6 +94,8 @@ Status: ✅ done · 🟡 partial · ⬜ not started · 🔒 blocked
 
 **Strategy docs** (product direction — inform the phases below): [meta-data.md](docs/meta-data.md), [agent-voir-home.md](docs/agent-voir-home.md), [mobile-version.md](docs/mobile-version.md), [future-of-agents.md](docs/future-of-agents.md), [data-analytics.md](docs/data-analytics.md), [agent-quality-review.md](docs/agent-quality-review.md), [voice-agents.md](docs/voice-agents.md), [multilingual-agents.md](docs/multilingual-agents.md), [non-llm-models.md](docs/non-llm-models.md), [model-performance.md](docs/model-performance.md), [agents-sunsets.md](docs/agents-sunsets.md), [china-and-robots.md](docs/china-and-robots.md).
 
+**Architecture docs:** [ui-dashboard.md](docs/architecture/ui-dashboard.md) (Live Proxy Flow operations console — mockup: [agent-voir-dashboard-01.png](docs/architecture/agent-voir-dashboard-01.png)).
+
 ### Phase 0: Developer experience and project trust
 
 - ✅ Quickstart smoke test
@@ -154,6 +156,7 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ Human-in-the-loop approval gates
 - ⬜ Prompt injection and tool-call security
 - 🟡 Admin web console *(MVP done; registration UI, policy viewer, approval queue pending)*
+- 🟡 Operations dashboard — Live Proxy Flow UI *(Milestone A–B shipped: gateway proxy-events + WebSocket, `/live` console, seed/demo scripts — [ui-dashboard.md](docs/architecture/ui-dashboard.md))*
 - ⬜ Enhanced agent metadata *(governed runtime asset model — see [meta-data.md](docs/meta-data.md))*
 
 ### Phase 3: Semantic cache and evals
@@ -230,7 +233,7 @@ agentvoir/
   apps/
     gateway/                # Go LLM gateway/proxy: cache, routing, model providers
     registry-api/           # Go registry API: agents, prompts, dependencies, budgets
-    web/                    # Next.js admin console
+    web/                    # Next.js admin + Live Proxy Flow operations console
   packages/
     sdk-python/             # Python SDK
     sdk-typescript/         # TypeScript SDK
@@ -365,16 +368,28 @@ make demo-oidc                    # password grant → JWT → registry/gateway
 
 Guide: [docs/guides/oidc-setup.md](docs/guides/oidc-setup.md)
 
-### Admin web console
+### Admin web console & Live Proxy Flow UI
 
-Browse agents, budgets, dependencies, and usage from the browser:
+The operations console lives in **`apps/web`** (Next.js — extend this project; no separate Vite app). Today it includes:
+
+- **Overview** — agent registry summary, monthly spend, cache hit rate (`/`)
+- **Live Proxy Flow** — live grid, KPI cards, filters, three-column trace drilldown (`/live`) — see [docs/architecture/ui-dashboard.md](docs/architecture/ui-dashboard.md)
+- **Agents** — list and detail pages
+- Stub routes for Traces, Models, Tools, Alerts, Analytics, Audit, Policies, Settings
 
 ```bash
 make onebox-up-build              # or onebox-up with a release that includes these features
-make run-web                      # http://localhost:3000
+make run-web                      # http://localhost:3000/live
 ```
 
-Set `REGISTRY_API_URL` and `TOKEN_ACCOUNTING_URL` if your stack uses custom ports.
+Set `REGISTRY_API_URL` and `TOKEN_ACCOUNTING_URL` if your stack uses custom ports. Full UI roadmap: [docs/development-roadmap.md](docs/development-roadmap.md) → **Operations dashboard (Live Proxy Flow UI)**.
+
+**Live dashboard demo:** [docs/demo/live-dashboard.md](docs/demo/live-dashboard.md)
+
+```bash
+make demo-live-dashboard    # seed dummy proxy-event rows + API checks
+make run-web                # http://localhost:3000/live
+```
 
 **Quick try troubleshooting**
 

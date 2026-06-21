@@ -19,7 +19,7 @@ func DevCORS(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, x-agent-id, x-agent-version, x-tenant-id, x-user-id, x-trace-id")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type, x-agent-id, x-agent-version, x-tenant-id, x-user-id, x-trace-id, Connection, Upgrade")
 			w.Header().Set("Access-Control-Max-Age", "86400")
 		}
 		if r.Method == http.MethodOptions {

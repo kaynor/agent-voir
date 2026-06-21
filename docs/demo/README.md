@@ -171,6 +171,17 @@ See [examples/demo/policy-denial-scenario.md](../../examples/demo/policy-denial-
 | `scripts/demo-budget-status.sh` | Budget utilization API demo |
 | `scripts/demo-policy-simulate.sh` | Policy simulation API demo |
 
+## Live Proxy Flow dashboard
+
+Chrome Network–style operations console at **http://localhost:3000/live**.
+
+```bash
+make demo-live-dashboard   # seed dummy rows + API smoke checks
+make run-web               # start console (separate terminal)
+```
+
+Full guide: [live-dashboard.md](live-dashboard.md)
+
 ## Troubleshooting
 
 | Problem | Fix |

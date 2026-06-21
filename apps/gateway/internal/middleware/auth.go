@@ -12,7 +12,7 @@ import (
 func Auth(cfg agentauth.Config) func(http.Handler) http.Handler {
 	authn := agentauth.NewAuthenticator(cfg)
 	return agentauth.Middleware(authn, agentauth.MiddlewareOptions{
-		Skip: agentauth.SkipHealthz,
+		Skip: skipAuth,
 		OnError: func(w http.ResponseWriter, _ *http.Request, err error) {
 			message := "invalid API key"
 			if err == agentauth.ErrMissingBearer {

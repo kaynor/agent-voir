@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: AgentVoir Gateway API
-  version: 0.1.0
+  version: 0.4.0
   description: |
     OpenAI-compatible LLM gateway with AgentVoir operational extensions.
     See also the [Registry API](openapi.yaml).
@@ -89,6 +89,109 @@ paths:
           description: Invalid API key
         '502':
           description: Upstream provider error
+  /v1/proxy-events:
+    get:
+      summary: List recent proxy events for the Live Proxy Flow dashboard
+      description: |
+        Returns bounded summary rows for the operations grid. Read-only; no API key required
+        (see gateway ops middleware). Use query params to filter by agent, response type, tag, or trace.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 500
+            maximum: 5000
+        - name: window
+          in: query
+          schema:
+            type: string
+            enum: [1m, 5m, 15m, 1h]
+            default: 5m
+        - name: agent
+          in: query
+          schema:
+            type: string
+        - name: response_type
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: trace_id
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Event list with KPI snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxyEventsListResponse'
+  /v1/proxy-events/metrics:
+    get:
+      summary: KPI metrics for a time window
+      parameters:
+        - name: window
+          in: query
+          schema:
+            type: string
+            enum: [1m, 5m, 15m, 1h]
+            default: 5m
+      responses:
+        '200':
+          description: Metrics snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxyEventsMetrics'
+  /v1/proxy-events/seed:
+    post:
+      summary: Seed dummy proxy events (dev/demo)
+      description: Requires gateway API key. Loads synthetic rows for dashboard verification.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProxyEventsSeedRequest'
+      responses:
+        '200':
+          description: Seed result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProxyEventsSeedResponse'
+        '401':
+          description: Invalid API key
+  /v1/traces/{traceID}:
+    get:
+      summary: Trace drilldown for a selected grid row
+      description: Returns call-flow steps and optional tool-call payload. No API key required.
+      parameters:
+        - name: traceID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trace detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TraceDetail'
+        '404':
+          description: Trace not found
 components:
   securitySchemes:
     bearerAuth:
@@ -119,3 +222,169 @@ components:
           enum: [system, user, assistant]
         content:
           type: string
+    ProxyEvent:
+      type: object
+      properties:
+        seq:
+          type: integer
+        event_time:
+          type: string
+          format: date-time
+        trace_id:
+          type: string
+        span_id:
+          type: string
+        agent_id:
+          type: string
+        user_id:
+          type: string
+        req_method:
+          type: string
+        req_path:
+          type: string
+        status_code:
+          type: integer
+        provider:
+          type: string
+        model:
+          type: string
+        response_type:
+          type: string
+        next_action:
+          type: string
+        tool:
+          type: string
+        terminal:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        tokens_in:
+          type: integer
+        tokens_out:
+          type: integer
+        duration_ms:
+          type: integer
+        cost_usd:
+          type: number
+        otel_status:
+          type: string
+        datadog_status:
+          type: string
+    ProxyEventsListResponse:
+      type: object
+      properties:
+        window:
+          type: string
+        limit:
+          type: integer
+        matched_count:
+          type: integer
+        returned_count:
+          type: integer
+        metrics:
+          $ref: '#/components/schemas/ProxyEventsMetrics'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProxyEvent'
+    ProxyEventsMetrics:
+      type: object
+      properties:
+        window:
+          type: string
+        requests_total:
+          type: integer
+        errors:
+          type: integer
+        tool_calls:
+          type: integer
+        final_answers:
+          type: integer
+        blocked:
+          type: integer
+        cache_hits:
+          type: integer
+        tokens_in:
+          type: integer
+        tokens_out:
+          type: integer
+        active_requests:
+          type: integer
+        cost_usd:
+          type: number
+        cache_hit_rate:
+          type: number
+        p50_latency_ms:
+          type: integer
+        p95_latency_ms:
+          type: integer
+        p99_latency_ms:
+          type: integer
+    ProxyEventsSeedRequest:
+      type: object
+      properties:
+        count:
+          type: integer
+          default: 60
+        reset:
+          type: boolean
+        stream:
+          type: boolean
+    ProxyEventsSeedResponse:
+      type: object
+      properties:
+        inserted:
+          type: integer
+        total:
+          type: integer
+        message:
+          type: string
+    TraceDetail:
+      type: object
+      properties:
+        trace_id:
+          type: string
+        agent_id:
+          type: string
+        user_id:
+          type: string
+        status:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        duration_ms:
+          type: integer
+        cost_usd:
+          type: number
+        tags:
+          type: array
+          items:
+            type: string
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step:
+                type: integer
+              span_id:
+                type: string
+              kind:
+                type: string
+              response_type:
+                type: string
+              status:
+                type: string
+              duration_ms:
+                type: integer
+        tool_call:
+          type: object
+          properties:
+            name:
+              type: string
+            arguments:
+              type: object
+              additionalProperties: true

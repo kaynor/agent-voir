@@ -727,6 +727,99 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 ---
 
+### 🟡 Operations dashboard (Live Proxy Flow UI)
+
+**What it means:** A Chrome DevTools–style **live network console** for AI traffic — watch requests stream through the gateway, filter by agent or tag, click a row to inspect the full call flow (LLM calls, tool executions, cache hits, policy blocks), and jump out to Datadog or OpenTelemetry when you need enterprise observability. This is the primary operator experience shown in [ui-dashboard.md](architecture/ui-dashboard.md) and the mockup [agent-voir-dashboard-01.png](architecture/agent-voir-dashboard-01.png).
+
+**Project decision:** Extend the existing **`apps/web`** admin console (Next.js 14, React, TypeScript). Do **not** create a separate Vite app — the repo already has a placeholder at `apps/web` with dashboard, agent list, and agent detail pages. Add TanStack Table, TanStack Virtual, and Zustand inside `apps/web` per the architecture doc.
+
+**Architecture split:**
+
+```text
+Fast path:  Client → Gateway → LLM provider → Client
+Observability: Gateway → event bus → WebSocket fanout → Live UI grid
+                              └→ OpenTelemetry → Datadog / Splunk / archive
+```
+
+The UI is a **real-time subscriber**, not on the LLM proxy hot path. The grid receives small summary packets; full prompts and responses load only when a row is clicked.
+
+**Milestone A — App shell and navigation**
+
+- [x] Sidebar layout: Live Flow, Traces, Agents, Models, Tools, Alerts, Analytics, Audit Logs, Policies, Settings — *Match the mockup navigation; one place for all operator tasks.*
+- [x] Dark ops theme and responsive shell (sidebar + main + bottom drilldown) — *Visual design aligned with agent-voir-dashboard-01.png.*
+- [x] Placeholder routes for each nav section — *Stub pages so navigation and routing work before features ship.*
+- [ ] User profile / OIDC session slot in sidebar footer — *Show who is logged in once SSO is wired (static placeholder today).*
+
+**Milestone B — Live Proxy Flow page (static / mock data)**
+
+- [x] KPI cards: requests, tokens, cost, budget, provider limits, latency percentiles, errors, cache hit rate — *Top-row health at a glance, like the mockup.*
+- [x] Control bar: time range, record limit, search box, response-type filter, follow-tail toggle, pause — *Operators control what the grid shows without reloading.*
+- [ ] Virtualized event grid (TanStack Table + TanStack Virtual, max ~500 rows) — *Smooth scrolling even under high traffic; only visible rows hit the DOM.*
+- [x] Grid columns: time, trace ID, agent/user, req→resp, status, provider/model, response type, tool, tags, tokens, cost, duration, OTel export — *Chrome Network–style columns for AI-specific semantics.*
+- [x] Bottom trace drilldown panel with tabs: Flow, Request, Response, Headers, Tool Calls, Tokens, OTel, Datadog — *Inspect one request without leaving the live view (Flow tab + mock JSON today).*
+- [x] Response-type badges: TOOL CALL, TOOL RESULT, FINAL ANSWER, STREAM FINAL, CACHE RESPONSE, GUARDRAIL BLOCK — *Color-coded call kinds at a glance.*
+
+**Milestone C — Backend live event query API**
+
+- [x] `GET /v1/proxy-events` with time window, filters, cursor pagination — *Historical and bounded query mode for investigations.*
+- [x] Event summary schema (small rows; no full prompts in list) — *Keep list payloads lightweight for speed.*
+- [ ] Gateway emits summary events to Redis Streams or NATS — *Decouple proxy from UI; fan out to many viewers.*
+- [x] Recent-event store (ClickHouse or partitioned Postgres) — *In-memory store for dev/MVP; durable store pending.*
+- [x] Automatic tags (#error, #tool-call, #high-cost, #policy-blocked, …) and manual user tags — *Tag-driven investigation workflow (auto tags live; manual tags pending).*
+- [x] `POST /v1/proxy-events/seed` and `make seed-live-events` / `cmd/seed-proxy-events` — *Load dummy traces for dashboard verification.*
+
+**Milestone D — WebSocket live tail**
+
+- [x] `WS /ws/proxy-events` with typed packets: snapshot, row_upsert, row_patch, metrics_delta, heartbeat, backpressure — *Push updates to browsers without polling (backpressure pending).*
+- [x] Client ring buffer (default 500 rows; drop oldest in live mode) — *Bounded memory in the browser.*
+- [x] Follow tail ON/OFF, pause grid, resume from sequence number — *Operators freeze the grid while inspecting a row (seq resume pending).*
+- [ ] Batched UI updates every 100–250 ms — *Avoid re-rendering thousands of times per second.*
+- [ ] Backpressure UI when event rate exceeds threshold (sampled live tail) — *Graceful degradation under extreme load.*
+
+**Milestone E — Trace drilldown and lazy payload fetch**
+
+- [x] `GET /v1/traces/{traceId}` with call-flow steps (user request → LLM → tool → LLM → response) — *Vertical timeline like the mockup Flow tab.*
+- [ ] Lazy fetch endpoints for request body, response body, headers, raw JSON — *Load heavy data only on tab click.*
+- [ ] Tool call arguments JSON viewer and linked span IDs — *Debug tool executions without dumping everything into the grid.*
+- [ ] Pin selected trace when it scrolls off the live window — *Keep inspecting an old row even as new rows arrive.*
+
+**Milestone F — Search, tags, and saved views**
+
+- [ ] Datadog-style search syntax (`agent:`, `status:`, `tag:`, `cost:>0.05`, …) — *Power users filter fast without clicking through menus.*
+- [ ] Manual tag add/remove on rows (#review, #security-investigation, …) — *Mark traces for follow-up.*
+- [ ] Tag rules engine (auto-tag on high cost, errors, slow latency) — *Surface important rows automatically.*
+- [ ] Save View and Export CSV — *Reuse filter sets and share evidence with finance or security.*
+
+**Milestone G — OpenTelemetry and Datadog integration**
+
+- [ ] Gateway OTel spans: client.request, policy_check, cache_lookup, llm.call, tool.execution — *One trace per user turn; vendor-neutral telemetry.*
+- [ ] Stable `agentvoir.*` span attributes (agent_id, response_kind, tool.name, budget.remaining, …) — *LLM-specific facets in any OTel backend.*
+- [ ] Per-row export badges: OTel queued/exported, Datadog indexed/failed — *Audit reliability visible in the grid.*
+- [ ] Deep links: Open trace in Datadog, open logs, open cost dashboard — *Bridge from AgentVoir UI to enterprise observability tools.*
+- [ ] OTel Collector → Datadog/Splunk/Elastic exporters — *Enterprise audit trail outside AgentVoir.*
+
+**Milestone H — Additional console pages (from sidebar)**
+
+- [ ] Traces — query mode with custom time range and server-side pagination — *Deep search beyond live tail.*
+- [ ] Models — provider health, rate limits, pricing drift alerts — *Ops view of AI vendors.*
+- [ ] Tools — MCP and tool registry browser — *See what agents can invoke.*
+- [ ] Alerts — budget, error-rate, and policy violation inbox — *Actionable notifications.*
+- [ ] Analytics — aggregated charts (not raw row stream) — *Trends over hours/days.*
+- [ ] Audit Logs — registry and gateway mutation history — *Compliance view.*
+- [ ] Policies — decision viewer and simulation UI — *Test rules without raw Rego.*
+
+**Frontend stack (`apps/web`):**
+
+| Layer | Choice |
+| ----- | ------ |
+| Framework | Next.js 14 App Router (existing) |
+| Grid | TanStack Table + TanStack Virtual |
+| Live state | Zustand |
+| Realtime | WebSocket client |
+| Styling | CSS modules / existing `styles.css` (dark ops theme) |
+
+---
+
 ### ⬜ Enhanced agent metadata (governed runtime asset)
 
 **What it means:** Today the registry captures basics (owner, lifecycle, risk, policies, budget, cache, dependencies, model route). Strategy docs ([meta-data.md](meta-data.md), [future-of-agents.md](future-of-agents.md)) describe modeling each agent as a **governed runtime asset** — who owns it, what it can touch, what version runs, how to disable it. This section tracks metadata gaps vs. the current YAML manifest and PostgreSQL schema.
