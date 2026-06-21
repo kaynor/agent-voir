@@ -178,3 +178,36 @@ export function mapTraceDetail(detail: TraceDetailResponse, row?: LiveEventRow):
     datadogStatus: row?.datadogStatus ?? "indexed",
   };
 }
+
+const JSON_DISPLAY_INDENT = 4;
+
+/** Pretty-print JSON for drilldown panels with visible nesting. */
+export function formatJsonDisplay(value: unknown, indent = JSON_DISPLAY_INDENT): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    try {
+      return JSON.stringify(JSON.parse(trimmed), null, indent);
+    } catch {
+      return trimmed;
+    }
+  }
+  try {
+    return JSON.stringify(value, null, indent);
+  } catch {
+    return String(value);
+  }
+}
+
+export function formatToolCallJson(toolCall: { name: string; arguments: unknown }): string {
+  let args: unknown = toolCall.arguments;
+  if (typeof args === "string") {
+    try {
+      args = JSON.parse(args);
+    } catch {
+      /* keep raw string */
+    }
+  }
+  return formatJsonDisplay({ function: toolCall.name, arguments: args });
+}

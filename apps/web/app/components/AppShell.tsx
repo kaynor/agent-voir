@@ -1,28 +1,53 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { LiveTopbar } from "./LiveTopbar";
 import { SidebarNav } from "./SidebarNav";
 
-export function AppShell({ children }: { children: ReactNode }) {
+function Sidebar({ live = false }: { live?: boolean }) {
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <aside className="sidebar">
+      {!live ? (
         <Link href="/live" className="sidebar-brand" title="AgentVoir">
           <Image src="/agentvoir-logo.svg" alt="AgentVoir" width={22} height={22} className="sidebar-logo" priority />
         </Link>
-        <SidebarNav />
-        <div className="sidebar-footer">
-          <div className="user-chip">
-            <span className="user-avatar" aria-hidden>
-              K
-            </span>
-            <div className="user-meta">
-              <strong>Kailash</strong>
-              <span className="user-role">Admin</span>
-            </div>
+      ) : null}
+      <SidebarNav />
+      <div className="sidebar-footer">
+        <div className="user-chip">
+          <span className="user-avatar" aria-hidden>
+            K
+          </span>
+          <div className="user-meta">
+            <strong>Kailash</strong>
+            <span className="user-role">Admin</span>
           </div>
         </div>
-      </aside>
+      </div>
+    </aside>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isLive = pathname === "/live" || pathname.startsWith("/live/");
+
+  if (isLive) {
+    return (
+      <div className="app-shell app-shell--live">
+        <LiveTopbar />
+        <Sidebar live />
+        <div className="app-main app-main--live">{children}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-shell">
+      <Sidebar />
       <div className="app-main">{children}</div>
     </div>
   );

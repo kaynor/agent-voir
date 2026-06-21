@@ -168,19 +168,17 @@ export const mockTraceFlow: TraceFlowStep[] = [
   { step: 5, kind: "Response Returned", status: "complete", durationMs: 4, nextAction: "Done" },
 ];
 
-export const mockToolCallJson = JSON.stringify(
-  {
-    function: "github.search_issues",
-    arguments: {
-      owner: "agentvoir",
-      repo: "agentvoir",
-      query: "is:open label:bug",
-      per_page: 5,
-    },
+import { formatToolCallJson } from "./live-api";
+
+export const mockToolCallJson = formatToolCallJson({
+  name: "github.search_issues",
+  arguments: {
+    owner: "agentvoir",
+    repo: "agentvoir",
+    query: "is:open label:bug",
+    per_page: 5,
   },
-  null,
-  2,
-);
+});
 
 export const mockTraceDetail = {
   traceId: "trace_9b8d7f",

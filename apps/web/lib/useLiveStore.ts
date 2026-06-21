@@ -5,6 +5,7 @@ import type { LiveEventRow, LiveMetrics, TraceDetailView, TraceFlowStep } from "
 import {
   fetchProxyEvents,
   fetchTraceDetail,
+  formatToolCallJson,
   gatewayWsUrl,
   mapApiMetrics,
   mapGatewayEvent,
@@ -78,13 +79,7 @@ export const useLiveStore = create<LiveStore>((set, get) => ({
       set({
         traceSteps: mapTraceSteps(detail),
         traceDetail: mapTraceDetail(detail, row),
-        toolCallJson: detail.tool_call
-          ? JSON.stringify(
-              { function: detail.tool_call.name, arguments: detail.tool_call.arguments },
-              null,
-              2,
-            )
-          : null,
+        toolCallJson: detail.tool_call ? formatToolCallJson(detail.tool_call) : null,
       });
     } catch {
       set({

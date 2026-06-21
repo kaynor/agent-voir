@@ -35,9 +35,9 @@ export function SidebarNav() {
           >
             <span className="sidebar-link-icon" aria-hidden>
               {Icon ? <Icon /> : null}
-              {item.count ? <span className="nav-count-badge">{item.count}</span> : null}
             </span>
             <span className="sidebar-link-label">{item.label}</span>
+            {item.count ? <span className="nav-count-badge">{item.count}</span> : null}
           </Link>
         );
       })}

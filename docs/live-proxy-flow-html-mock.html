@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgentVoir - Live Proxy Flow Mock</title>
+  <style>
+    :root {
+      --bg: #05101b;
+      --panel: #091826;
+      --panel-2: #0b1c2b;
+      --panel-3: #0e2233;
+      --line: rgba(126, 157, 190, 0.22);
+      --line-soft: rgba(126, 157, 190, 0.12);
+      --text: #eaf3ff;
+      --muted: #9aacc3;
+      --muted-2: #6d829b;
+      --blue: #2e8cff;
+      --blue-2: #165de4;
+      --cyan: #10d7ff;
+      --green: #22d36b;
+      --green-soft: rgba(34, 211, 107, 0.16);
+      --red: #ff4d5e;
+      --red-soft: rgba(255, 77, 94, 0.16);
+      --purple: #b35cff;
+      --purple-soft: rgba(179, 92, 255, 0.20);
+      --orange: #ff9f1c;
+      --orange-soft: rgba(255, 159, 28, 0.18);
+      --teal: #18e0b7;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --radius: 10px;
+      --nav-w: 76px;
+      --top-h: 50px;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 20% -10%, rgba(46, 140, 255, 0.22), transparent 32%),
+        radial-gradient(circle at 96% 8%, rgba(179, 92, 255, 0.16), transparent 24%),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      overflow: hidden;
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: var(--nav-w) 1fr;
+      grid-template-rows: var(--top-h) 1fr;
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      height: var(--top-h);
+      border-bottom: 1px solid var(--line-soft);
+      background: linear-gradient(180deg, rgba(5, 16, 27, 0.98), rgba(5, 16, 27, 0.88));
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 172px;
+    }
+
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #1d7cff, #6633ff 60%, #0bd9ff);
+      position: relative;
+      box-shadow: 0 0 26px rgba(46, 140, 255, 0.5);
+    }
+    .logo:before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 13px;
+      width: 18px;
+      height: 5px;
+      border: 2px solid rgba(255,255,255,0.9);
+      border-left-color: transparent;
+      border-right-color: transparent;
+      border-radius: 50%;
+      transform: rotate(-18deg);
+    }
+
+    .brand-name { font-size: 21px; font-weight: 750; letter-spacing: -0.02em; }
+    .divider { height: 26px; width: 1px; background: var(--line); }
+    .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .live-pill {
+      padding: 3px 8px;
+      border: 1px solid rgba(34,211,107,.55);
+      color: #54f48e;
+      border-radius: 5px;
+      background: rgba(34,211,107,.08);
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .top-spacer { flex: 1; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 16px rgba(34,211,107,.8); }
+    .top-status { display: flex; align-items: center; gap: 8px; color: #d7e5f6; margin-left: 4px; }
+    .clients { color: #d9e6f4; display:flex; align-items:center; gap:6px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: rgba(12, 29, 44, .88);
+      color: var(--text);
+      border-radius: 7px;
+      height: 33px;
+      padding: 0 12px;
+      font-weight: 650;
+      cursor: default;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .btn.purple { border-color: rgba(179,92,255,.62); color: #f0d8ff; background: rgba(69, 21, 99, 0.46); }
+    .btn.icon { width: 34px; padding: 0; font-size: 16px; }
+    .avatar-top { width: 29px; height: 29px; background: linear-gradient(135deg, #236dff, #173d86); border-radius: 50%; display:grid; place-items:center; font-weight:800; }
+
+    .sidebar {
+      grid-row: 2;
+      border-right: 1px solid var(--line-soft);
+      background: rgba(5, 17, 29, .86);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 7px 6px 12px;
+      gap: 5px;
+    }
+
+    .nav-item {
+      height: 55px;
+      border-radius: 8px;
+      color: #d9e5f1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      position: relative;
+      font-size: 11px;
+      letter-spacing: -0.02em;
+    }
+    .nav-item .ico { font-size: 20px; line-height: 1; color: #d4e9ff; }
+    .nav-item.active {
+      background: linear-gradient(180deg, rgba(26, 96, 222, .72), rgba(20, 54, 111, .82));
+      border: 1px solid rgba(75, 158, 255, .62);
+      box-shadow: inset 3px 0 0 #178cff, 0 0 28px rgba(23,140,255,.18);
+    }
+    .nav-alert {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 5px;
+      border-radius: 10px;
+      background: var(--red);
+      color: white;
+      font-size: 10px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+    .side-spacer { flex: 1; }
+    .user-card { padding: 8px 5px 0; display:flex; flex-direction:column; align-items:center; gap:5px; }
+    .user-avatar { width: 34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#814dff,#462389); display:grid; place-items:center; font-weight:800; font-size:16px; }
+    .user-name { font-weight: 700; font-size: 13px; }
+    .user-role { color: var(--muted); margin-top:-4px; }
+    .collapse { color: var(--muted); font-size: 16px; margin-top: 8px; }
+
+    .main {
+      grid-column: 2;
+      grid-row: 2;
+      overflow: hidden;
+      padding: 8px 10px 8px;
+      display: grid;
+      grid-template-rows: 106px 43px 30px minmax(245px, 1fr) 44px minmax(280px, 36vh) 24px;
+      gap: 7px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1.05fr 1.05fr 1fr 1.05fr 1fr .95fr .95fr 1.28fr;
+      gap: 8px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(11, 28, 43, .94), rgba(6, 18, 31, .94));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 11px 13px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:after {
+      content: "";
+      position: absolute;
+      right: -34px;
+      bottom: -42px;
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle, rgba(46, 140, 255, .10), transparent 64%);
+      pointer-events:none;
+    }
+    .card-title { color: #c7d7e8; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+    .metric { font-size: 26px; font-weight: 780; margin-top: 6px; letter-spacing: -0.04em; }
+    .mini-row { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; gap: 8px; color: #d3e0ee; }
+    .delta { color: var(--green); font-weight: 750; }
+    .delta.red { color: var(--red); }
+    .spark {
+      width: 70px;
+      height: 26px;
+      background: linear-gradient(180deg, transparent 62%, rgba(34,211,107,.08));
+      position: relative;
+      overflow: hidden;
+    }
+    .spark svg { width: 100%; height: 100%; }
+    .donut-wrap { display:flex; align-items:center; gap:12px; margin-top: 5px; }
+    .donut {
+      width: 47px; height:47px; border-radius:50%;
+      background: conic-gradient(var(--purple) 0 36%, var(--blue) 36% 70%, rgba(255,255,255,.14) 70% 100%);
+      display:grid; place-items:center;
+      box-shadow: 0 0 20px rgba(46,140,255,.20);
+    }
+    .donut:before { content:""; width:30px; height:30px; border-radius:50%; background:var(--panel); }
+    .small-label { color:var(--muted); font-size:10.5px; }
+    .bar-label { display:flex; justify-content:space-between; color:#cfdcec; font-size:11px; margin: 7px 0 4px; }
+    .bar { height: 7px; border-radius: 10px; background: rgba(255,255,255,.12); overflow:hidden; }
+    .bar > i { display:block; height:100%; border-radius:10px; background:linear-gradient(90deg,var(--green),#6cf495); }
+    .bar.blue > i { background:linear-gradient(90deg,var(--blue),#65d8ff); }
+    .card.compact .metric { font-size: 22px; }
+    .latency-lines { margin-top: 6px; display:grid; grid-template-columns:auto auto; gap:5px 12px; font-size:12px; }
+    .latency-lines b { color:#a891ff; }
+    .latency-lines .bad { color:#ff5a6a; }
+    .token-budget-card { display:grid; grid-template-columns: 64px 1fr; gap:10px; align-items:center; }
+    .big-donut { width:60px;height:60px;border-radius:50%;background:conic-gradient(var(--purple) 0 36%, rgba(255,255,255,.12) 36% 100%); display:grid;place-items:center;position:relative; }
+    .big-donut:before { content:""; width:43px;height:43px;border-radius:50%;background:var(--panel);position:absolute; }
+    .big-donut span { z-index:1; font-size:17px; font-weight:800; }
+
+    .controls {
+      display:grid;
+      grid-template-columns: 185px 170px 1fr 112px 112px 124px 126px 88px;
+      gap: 9px;
+      align-items:center;
+      background: rgba(7, 19, 31, .75);
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 7px 8px;
+    }
+    .select, .search {
+      height: 29px;
+      border: 1px solid var(--line);
+      background: rgba(7, 18, 30, .9);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 0 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:6px;
+      white-space:nowrap;
+      overflow:hidden;
+    }
+    .search { justify-content:flex-start; color:var(--muted); }
+    .search span { color:#dce9f6; opacity:.74; overflow:hidden; text-overflow:ellipsis; }
+    .toggle {
+      display:flex; align-items:center; gap:8px; justify-content:flex-end; color:#d8e5f4;
+    }
+    .switch { width:44px; height:22px; border-radius:999px; background:#1269e6; position:relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+    .switch:after { content:""; position:absolute; right:3px; top:3px; width:16px; height:16px; background:white; border-radius:50%; }
+    .pause { height:31px; background:rgba(8,18,30,.85); border:1px solid var(--line); border-radius:6px; color:#f1f7ff; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700; }
+
+    .summary {
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 0 2px 0 4px;
+      color:#c8d6e4;
+    }
+    .summary b { color:white; }
+    .summary-left a { color:#5aa7ff; text-decoration:none; margin-left: 12px; }
+    .summary-right { display:flex; align-items:center; gap:23px; }
+    .summary-stat { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .summary-stat .dot { width:9px; height:9px; border-radius:50%; border:2px solid currentColor; }
+    .summary-stat.error { color:var(--red); }
+    .summary-stat.tool { color:var(--purple); }
+    .summary-stat.final { color:var(--green); }
+    .summary-stat.block { color:var(--orange); }
+    .summary-stat.cache { color:var(--cyan); }
+    .summary-right a { color:#5aa7ff; text-decoration:none; }
+
+    .grid-panel, .selected, .bottom-panel, .footer {
+      background: rgba(7, 18, 30, .80);
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      overflow:hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    table { border-collapse: collapse; width: 100%; }
+    .grid-table th {
+      height: 29px;
+      text-align:left;
+      color:#aebfd2;
+      font-weight:700;
+      font-size: 11px;
+      border-bottom: 1px solid var(--line-soft);
+      background: rgba(12, 30, 44, .62);
+      padding: 0 8px;
+      white-space: nowrap;
+    }
+    .grid-table td {
+      border-bottom:1px solid var(--line-soft);
+      padding: 6px 8px;
+      vertical-align: middle;
+      color:#e6f1ff;
+      height: 43px;
+    }
+    .grid-table tr:nth-child(odd) td { background: rgba(255,255,255,.012); }
+    .grid-table tr:hover td { background: rgba(46,140,255,.08); }
+    .grid-table td.muted, .muted { color: var(--muted); }
+    .grid-table .idx { width:28px; color:#c3d1df; text-align:center; }
+    .trace { color:#4ba4ff; font-weight: 650; white-space:nowrap; }
+    .copy { color:#7d93ac; margin-left:4px; }
+    .agent { font-weight:700; }
+    .sub { color:var(--muted); font-size:11px; margin-top:2px; }
+    .req { line-height:1.25; }
+    .status { padding:3px 8px; border-radius:5px; font-weight:800; display:inline-flex; min-width:32px; align-items:center; justify-content:center; }
+    .status.ok { background:var(--green-soft); color:#5df38f; }
+    .status.err { background:var(--red-soft); color:#ff7b88; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; padding:5px 10px; border-radius:5px; font-weight:800; font-size:11px; white-space:nowrap; letter-spacing:.01em; }
+    .badge.toolcall { background:linear-gradient(90deg, rgba(115,52,190,.8), rgba(93,43,162,.92)); color:#f3e4ff; }
+    .badge.toolresult { background:linear-gradient(90deg, rgba(40,98,170,.84), rgba(35,74,139,.92)); color:#e6f2ff; }
+    .badge.final { background:rgba(34,211,107,.24); color:#a9ffc8; }
+    .badge.stream { background:rgba(46,140,255,.28); color:#cae2ff; }
+    .badge.cache { background:rgba(255,159,28,.32); color:#ffd08a; }
+    .badge.block { background:rgba(255,77,94,.34); color:#ffd5da; }
+    .term { padding:3px 7px; border-radius:5px; font-weight:800; font-size:11px; }
+    .term.yes { background:rgba(34,211,107,.13); color:#66f19a; }
+    .term.no { background:rgba(255,77,94,.16); color:#ff8b96; }
+    .tag { display:inline-block; padding:2px 6px; border-radius:4px; margin:1px 2px 1px 0; background:rgba(46,140,255,.18); color:#83bfff; font-size:10.5px; }
+    .tag.purple { background:rgba(179,92,255,.18); color:#d6a5ff; }
+    .tag.red { background:rgba(255,77,94,.16); color:#ff9aa4; }
+    .tag.green { background:rgba(34,211,107,.14); color:#74f6a3; }
+    .check { color: var(--green); font-size: 16px; font-weight:800; }
+    .wave { color: var(--purple); font-size:16px; }
+
+    .selected {
+      display:grid;
+      grid-template-columns: auto auto auto auto auto 1fr auto auto auto auto;
+      gap: 14px;
+      align-items:center;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .sel-label { color:#dce9f6; }
+    .sel-label b { color:#51a8ff; }
+    .in-progress { padding:5px 9px; background:rgba(99,64,219,.43); color:#cbbcff; border-radius:5px; font-weight:700; }
+    .tiny-sep { width:1px; height:20px; background:var(--line-soft); }
+    .small-btn { height:29px; border-radius:6px; border:1px solid var(--line); background:rgba(10,24,38,.9); color:#eaf3ff; padding:0 11px; display:flex; align-items:center; gap:7px; font-weight:700; }
+    .small-btn.icon { width:31px; justify-content:center; padding:0; }
+
+    .bottom-panel {
+      display:grid;
+      grid-template-rows: 38px 1fr;
+      overflow:hidden;
+    }
+    .tabs {
+      display:flex;
+      align-items:center;
+      border-bottom:1px solid var(--line-soft);
+      background:rgba(9,23,37,.72);
+      padding-left: 8px;
+      gap: 4px;
+    }
+    .tab {
+      height:38px;
+      padding:0 12px;
+      display:flex; align-items:center; gap:6px;
+      color:#d7e6f5;
+      border-bottom:2px solid transparent;
+      font-weight:650;
+    }
+    .tab.active { color:#72adff; border-bottom-color:#2e8cff; background:rgba(46,140,255,.08); }
+    .tab .caret { color:var(--muted); }
+
+    .detail {
+      display:grid;
+      grid-template-columns: 29% 43% 14% 14%;
+      gap: 8px;
+      padding: 8px;
+      min-height:0;
+    }
+    .detail-card {
+      border:1px solid var(--line-soft);
+      background: rgba(7, 19, 31, .66);
+      border-radius:7px;
+      overflow:hidden;
+      min-height:0;
+    }
+    .detail-card h3 {
+      margin:0;
+      height:35px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 0 12px;
+      font-size:13px;
+      border-bottom:1px solid var(--line-soft);
+    }
+    .graph-btn { border:1px solid var(--line); border-radius:6px; padding:6px 9px; color:#d7e5f3; font-size:11px; background:rgba(255,255,255,.03); font-weight:650; }
+
+    .flow-list { padding: 10px 11px 10px 19px; position:relative; }
+    .flow-list:before { content:""; position:absolute; left:28px; top:28px; bottom:33px; width:1px; background:linear-gradient(var(--blue), var(--purple), var(--green)); }
+    .flow-step { display:grid; grid-template-columns: 28px 1fr; gap:9px; margin-bottom:9px; position:relative; }
+    .circle { width:23px;height:23px;border-radius:50%; display:grid; place-items:center; color:white; font-weight:800; background:var(--blue); z-index:2; box-shadow:0 0 0 3px rgba(46,140,255,.14); }
+    .circle.purple { background:#7d42df; box-shadow:0 0 0 3px rgba(179,92,255,.14); }
+    .circle.green { background:#26b765; box-shadow:0 0 0 3px rgba(34,211,107,.14); }
+    .flow-box { min-height:50px; border:1px solid var(--line); border-radius:6px; background:rgba(13,31,47,.72); padding:8px 10px; }
+    .flow-box.active { border-color:rgba(179,92,255,.54); background:linear-gradient(90deg, rgba(79,35,127,.42), rgba(13,31,47,.75)); }
+    .flow-title { display:flex; justify-content:space-between; align-items:center; font-weight:760; }
+    .flow-time { font-size:10.5px; color:var(--muted); }
+    .flow-meta { margin-top:4px; color:var(--muted); font-size:11px; display:flex; justify-content:space-between; gap:8px; }
+    .flow-ok { color:var(--green); font-size:20px; }
+
+    .middle-detail {
+      display:grid;
+      grid-template-rows: 41px 1fr;
+      gap:0;
+      overflow:hidden;
+    }
+    .step-header {
+      display:flex; align-items:center; gap:12px;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .step-chip { color:#8ac4ff; border:1px solid var(--line); background:rgba(46,140,255,.10); padding:5px 9px; border-radius:5px; font-weight:750; }
+    .step-title { color:#e6c4ff; font-size:14px; font-weight:800; }
+    .mini-pill { padding:4px 7px; background:rgba(46,140,255,.10); border:1px solid var(--line-soft); border-radius:5px; color:#c9d8e8; }
+    .mini-pill b { color:white; }
+    .detail-body {
+      display:grid;
+      grid-template-columns: 31% 1fr;
+      gap:8px;
+      padding:8px;
+      min-height:0;
+    }
+    .tool-summary { display:flex; flex-direction:column; gap:8px; min-height:0; }
+    .kv-card { border:1px solid var(--line-soft); border-radius:6px; overflow:hidden; background:rgba(8,19,31,.58); }
+    .kv-row { display:grid; grid-template-columns: 42% 1fr; min-height:30px; border-bottom:1px solid var(--line-soft); }
+    .kv-row:last-child { border-bottom:0; }
+    .kv-row span { padding:7px 8px; color:#cbd9e8; }
+    .kv-row b { padding:7px 8px; font-weight:650; }
+    .args-box { border:1px solid var(--line-soft); border-radius:6px; padding:10px; color:#ffb45c; background:rgba(6,16,27,.72); line-height:1.45; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11px; }
+    .code-card { min-width:0; position:relative; }
+    .code-title { height:28px; display:flex; align-items:center; justify-content:space-between; font-weight:750; color:#e6eef7; }
+    pre { margin:0; height: calc(100% - 28px); overflow:hidden; padding:11px 13px; background:rgba(2,11,20,.70); border:1px solid var(--line-soft); border-radius:6px; color:#d6eaff; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:11.2px; line-height:1.45; }
+    .key { color:#63d8ff; }
+    .str { color:#ffae5c; }
+    .num { color:#b3f080; }
+    .copy-btn { position:absolute; top:39px; right:10px; width:24px; height:24px; border-radius:5px; border:1px solid var(--line-soft); background:rgba(255,255,255,.05); display:grid; place-items:center; color:#d4e2f0; }
+
+    .side-detail { padding:0; display:grid; grid-template-rows:37px 1fr; overflow:hidden; }
+    .side-tabs { display:flex; border-bottom:1px solid var(--line-soft); }
+    .side-tab { flex:1; display:grid; place-items:center; font-weight:750; color:#aebfd1; border-bottom:2px solid transparent; }
+    .side-tab.active { color:#61a8ff; border-bottom-color:#2e8cff; background:rgba(46,140,255,.08); }
+    .side-content { padding:11px; overflow:hidden; }
+    .side-section { margin-bottom:13px; }
+    .side-section h4 { margin:0 0 8px; color:#f2f8ff; font-size:12px; }
+    .side-kv { display:grid; grid-template-columns: 54% 1fr; border-bottom:1px solid var(--line-soft); min-height:26px; align-items:center; }
+    .side-kv span { color:#b7c7d8; }
+    .side-kv b { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ok-text { color:var(--green); font-weight:800; }
+    .link-btn { height:27px; border:1px solid var(--line); border-radius:5px; display:flex; align-items:center; gap:7px; padding:0 8px; color:#d9e8f6; background:rgba(255,255,255,.03); margin-top:7px; }
+    .purple-link { color:#df9cff; border-color:rgba(179,92,255,.24); }
+    .budget-ring-row { display:flex; align-items:center; gap:9px; margin:8px 0; }
+    .small-donut { width:46px; height:46px; border-radius:50%; background:conic-gradient(var(--purple) 0 36%, rgba(255,255,255,.12) 36% 100%); display:grid; place-items:center; position:relative; }
+    .small-donut:before { content:""; position:absolute; width:32px; height:32px; border-radius:50%; background:var(--panel); }
+    .small-donut span { position:relative; font-weight:800; }
+
+    .footer {
+      display:flex; align-items:center; gap:22px; padding:0 12px;
+      color:#b7c6d7;
+      border-radius: 0;
+      border-left: 0; border-right:0; border-bottom:0;
+      background: rgba(4, 12, 22, .78);
+    }
+    .footer .health { color:#63f099; font-weight:750; }
+    .footer .sep { width:1px; height:13px; background:var(--line-soft); }
+    .footer-right { margin-left:auto; }
+
+    @media (max-width: 1320px) {
+      body { overflow:auto; }
+      .app { min-width: 1500px; min-height: 940px; }
+      .main { min-height: 890px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="logo"></div><div class="brand-name">AgentVoir</div></div>
+      <div class="divider"></div>
+      <div class="page-title">Live Proxy Flow</div>
+      <div class="live-pill">LIVE</div>
+      <div class="top-spacer"></div>
+      <div class="top-status"><span class="status-dot"></span> WebSocket</div>
+      <div class="top-status"><span class="status-dot"></span> Connected</div>
+      <div class="clients">⌁ Clients: <b>8</b></div>
+      <button class="btn purple">↗ Open in Datadog ↗</button>
+      <button class="btn">⇧ Export⌄</button>
+      <button class="btn icon">⚙</button>
+      <div class="avatar-top">K</div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="nav-item active"><div class="ico">⌁</div><div>Live Flow</div></div>
+      <div class="nav-item"><div class="ico">☷</div><div>Traces</div></div>
+      <div class="nav-item"><div class="ico">⌬</div><div>Agents</div></div>
+      <div class="nav-item"><div class="ico">◎</div><div>Models</div></div>
+      <div class="nav-item"><div class="ico">⚒</div><div>Tools</div></div>
+      <div class="nav-item"><div class="ico">♧</div><div>Alerts</div><span class="nav-alert">12</span></div>
+      <div class="nav-item"><div class="ico">▥</div><div>Analytics</div></div>
+      <div class="nav-item"><div class="ico">▤</div><div>Audit Logs</div></div>
+      <div class="nav-item"><div class="ico">⌾</div><div>Policies</div></div>
+      <div class="nav-item"><div class="ico">⚙</div><div>Settings</div></div>
+      <div class="side-spacer"></div>
+      <div class="user-card"><div class="user-avatar">K</div><div class="user-name">Kailash</div><div class="user-role">Admin</div><div class="collapse">›</div></div>
+    </aside>
+
+    <main class="main">
+      <section class="cards">
+        <div class="card">
+          <div class="card-title">Requests (5m)</div>
+          <div class="metric">18,240</div>
+          <div class="mini-row"><span><span class="delta">↗ 12.6%</span></span><span class="spark"><svg viewBox="0 0 100 35"><polyline points="0,30 10,24 20,27 30,14 42,20 54,9 66,17 78,7 88,12 100,4" fill="none" stroke="#22d36b" stroke-width="3"/></svg></span></div>
+          <div class="mini-row"><span>Active Now</span><b>12</b></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Tokens (5m)</div>
+          <div class="metric">256,780 <span class="delta" style="font-size:13px">↗ 8.7%</span></div>
+          <div class="donut-wrap"><div class="donut"></div><div><div class="small-label">Input</div><b>174,320</b></div><div><div class="small-label">Output</div><b>82,460</b></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cost (5m)</div>
+          <div class="metric">$1.82 <span class="delta" style="font-size:13px">↗ 9.4%</span></div>
+          <div class="mini-row"><span>Est. (1h)</span><b>$21.84</b></div>
+          <div class="spark" style="width:105px"><svg viewBox="0 0 100 35"><polyline points="0,26 10,29 18,20 30,25 42,15 52,20 65,8 75,13 84,5 100,22" fill="none" stroke="#22d36b" stroke-width="3"/></svg></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Budget (Daily)</div>
+          <div class="bar-label"><span>Used <b>184,220</b></span><span>Limits <b>500,000</b></span></div>
+          <div class="bar"><i style="width:36.8%"></i></div>
+          <div class="mini-row"><span>Left</span><b class="delta">315,780</b></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Provider Limits <span class="small-label">(OpenAI)</span></div>
+          <div class="bar-label"><span>Requests Left</span><b>24,320 / 30K</b></div>
+          <div class="bar"><i style="width:81%"></i></div>
+          <div class="bar-label"><span>Tokens Left</span><b>1.2M / 2M</b></div>
+          <div class="bar blue"><i style="width:60%"></i></div>
+          <div class="small-label" style="text-align:right;margin-top:2px">42m 17s</div>
+        </div>
+        <div class="card compact">
+          <div class="card-title">Latency (5m)</div>
+          <div class="latency-lines"><b>P50</b><span>620ms</span><b>P95</b><span class="bad">1.42s</span><b>P99</b><span class="bad">3.21s</span></div>
+        </div>
+        <div class="card compact">
+          <div class="card-title">Errors (5m)</div>
+          <div class="metric">132 <span class="delta red" style="font-size:13px">↗ 8.3%</span></div>
+          <div class="mini-row"><span>Rate</span><b>0.72%</b></div>
+        </div>
+        <div class="card token-budget-card">
+          <div class="big-donut"><span>36%</span></div>
+          <div>
+            <div class="card-title">Token Budget (Today)</div>
+            <div class="mini-row"><span>Used</span><b>184,220</b></div>
+            <div class="mini-row"><span>Limit</span><b>500,000</b></div>
+            <div class="bar" style="margin-top:8px"><i style="width:36%"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="controls">
+        <div class="select">◷ Live: Last 5 minutes <span>⌄</span></div>
+        <div class="select">Limit: Latest 500 <span>⌄</span></div>
+        <div class="search">⌕ <span>agent:research-agent response_type:tool_call</span> <b>⌘K</b></div>
+        <div class="select">Providers: All <span>⌄</span></div>
+        <div class="select">Models: All <span>⌄</span></div>
+        <div class="select">Tags: All Tags <span>⌄</span></div>
+        <div class="select">☷ More Filters</div>
+        <div class="toggle"><span>Follow Tail</span><span class="switch"></span></div>
+      </section>
+
+      <section class="summary">
+        <div class="summary-left">Showing latest <b>500</b> of <b>18,240</b> matching events in last 5 minutes (Auto-refresh) <a href="#">Auto-scroll&nbsp; ON</a></div>
+        <div class="summary-right">
+          <div class="summary-stat error"><span class="dot"></span> Errors <b>132</b></div>
+          <div class="summary-stat tool">⌁ Tool Calls <b>1,243</b></div>
+          <div class="summary-stat final">♧ Final Answers <b>8,912</b></div>
+          <div class="summary-stat block">▱ Blocked <b>45</b></div>
+          <div class="summary-stat cache">ϟ Cache Hits <b>3,802</b></div>
+          <a href="#">Save View</a>
+          <button class="pause">Ⅱ Pause</button>
+        </div>
+      </section>
+
+      <section class="grid-panel">
+        <table class="grid-table">
+          <thead>
+            <tr>
+              <th class="idx"></th><th>Time⌄</th><th>Trace ID⌄</th><th>Agent / User</th><th>Req → Resp</th><th>Status</th><th>Provider / Model</th><th>Response Type</th><th>Next Action</th><th>Tool</th><th>Terminal</th><th>Tags⌄</th><th>Tokens (In/Out)</th><th>Duration</th><th>Cost</th><th>OTel</th><th>Datadog⌄</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="idx">1</td><td>10:24:31.245</td><td><span class="trace">trace_9b8d7f</span><span class="copy">⧉</span></td><td><div class="agent">research-agent</div><div class="sub">user_42</div></td><td class="req">POST /v1/responses → 200 OK<br><span class="muted">(1.12s)</span></td><td><span class="status ok">200</span></td><td>OpenAI<div class="sub">gpt-4.1-mini</div></td><td><span class="badge toolcall">TOOL CALL ⚒</span></td><td>Execute<br><span class="muted">github.search_issues</span></td><td><span style="color:#df85ff">github.search_issues</span></td><td><span class="term no">No</span></td><td><span class="tag purple">#tool-call</span><span class="tag purple">#review</span></td><td>1,420 / 0</td><td>1.12s</td><td>$0.0032</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+            <tr><td class="idx">2</td><td>10:24:32.401</td><td><span class="trace">trace_9b8d7f</span><span class="copy">⧉</span></td><td><div class="agent">research-agent</div><div class="sub">user_42</div></td><td class="req">TOOL github.search_issues → 200 OK<br><span class="muted">(430ms)</span></td><td><span class="status ok">200</span></td><td>AgentVoir Tools<div class="sub">github.search_issues</div></td><td><span class="badge toolresult">TOOL RESULT</span></td><td>Send result<br><span class="muted">to LLM</span></td><td><span style="color:#df85ff">github.search_issues</span></td><td><span class="term no">No</span></td><td><span class="tag">#tool-result</span></td><td>0 / 0</td><td>430ms</td><td>$0.0000</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+            <tr><td class="idx">3</td><td>10:24:33.157</td><td><span class="trace">trace_9b8d7f</span><span class="copy">⧉</span></td><td><div class="agent">research-agent</div><div class="sub">user_42</div></td><td class="req">POST /v1/responses → 200 OK<br><span class="muted">(1.88s)</span></td><td><span class="status ok">200</span></td><td>OpenAI<div class="sub">gpt-4.1-mini</div></td><td><span class="badge final">FINAL ANSWER</span></td><td>Return to client</td><td>—</td><td><span class="term yes">Yes</span></td><td><span class="tag green">#final</span><span class="tag">#success</span></td><td>2,180 / 1,860</td><td>1.88s</td><td>$0.0061</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+            <tr><td class="idx">4</td><td>10:24:28.910</td><td><span class="trace">trace_2f5c1a</span><span class="copy">⧉</span></td><td><div class="agent">coding-agent</div><div class="sub">user_42</div></td><td class="req">POST /v1/chat/completions → 200 OK<br><span class="muted">(5.14s)</span></td><td><span class="status ok">200</span></td><td>Anthropic<div class="sub">claude-3-5-sonnet</div></td><td><span class="badge stream">STREAM FINAL</span></td><td>Return to client</td><td>—</td><td><span class="term yes">Yes</span></td><td><span class="tag">#stream</span><span class="tag">#high-token</span></td><td>3,760 / 3,120</td><td>5.14s</td><td>$0.0123</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+            <tr><td class="idx">5</td><td>10:24:27.114</td><td><span class="trace">trace_a7e3c9</span><span class="copy">⧉</span></td><td><div class="agent">scout-agent</div><div class="sub">user_15</div></td><td class="req">POST /proxy/query → 200 OK<br><span class="muted">(9ms)</span></td><td><span class="status ok">200</span></td><td>AgentVoir Cache<div class="sub">Exact Hit</div></td><td><span class="badge cache">CACHE RESPONSE ϟ</span></td><td>Return to client</td><td>—</td><td><span class="term yes">Yes</span></td><td><span class="tag">#cache-hit</span></td><td>0 / 0</td><td>9ms</td><td>$0.0000</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+            <tr><td class="idx">6</td><td>10:24:25.667</td><td><span class="trace">trace_7e1d2b</span><span class="copy">⧉</span></td><td><div class="agent">safety-agent</div><div class="sub">user_42</div></td><td class="req">POST /v1/chat/completions → 403<br><span class="muted">(312ms)</span></td><td><span class="status err">403</span></td><td>OpenAI<div class="sub">gpt-4.1-mini</div></td><td><span class="badge block">GUARDRAIL BLOCK</span></td><td>Return refusal</td><td>—</td><td><span class="term yes">Yes</span></td><td><span class="tag red">#blocked</span><span class="tag red">#safety</span></td><td>350 / 0</td><td>312ms</td><td>$0.0007</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+            <tr><td class="idx">7</td><td>10:24:24.219</td><td><span class="trace">trace_91c4aa</span><span class="copy">⧉</span></td><td><div class="agent">planner-agent</div><div class="sub">user_42</div></td><td class="req">POST /v1/responses → 200 OK<br><span class="muted">(1.33s)</span></td><td><span class="status ok">200</span></td><td>Google<div class="sub">gemini-1.5-pro</div></td><td><span class="badge final">FINAL ANSWER</span></td><td>Return to client</td><td>—</td><td><span class="term yes">Yes</span></td><td><span class="tag">#final</span></td><td>1,120 / 980</td><td>1.33s</td><td>$0.0021</td><td><span class="check">◎</span></td><td><span class="wave">⌁</span></td><td>⋮</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="selected">
+        <div class="sel-label">Selected Trace: <b>trace_9b8d7f</b></div><div class="in-progress">In Progress</div><div>Agent: <b>research-agent</b></div><div>User: <b>user_42</b></div><div>Started: <b>10:24:31.245</b> <span class="muted">(24s ago)</span></div><div>Duration: <b>3.45s</b></div><div>Total Cost: <b>$0.0093</b></div><div>Tags: <b style="color:#6cc0ff">#tool-call, #review</b></div><button class="small-btn">↗ View Full Trace</button><button class="small-btn">◇ Add Tag</button>
+      </section>
+
+      <section class="bottom-panel">
+        <div class="tabs"><div class="tab active">⌘ Flow</div><div class="tab">☞ Request</div><div class="tab">▱ Response</div><div class="tab">☷ Headers (24)<span class="caret">⌄</span></div><div class="tab">⚒ Tool Calls (1)<span class="caret">⌄</span></div><div class="tab">⌘ Tokens</div><div class="tab">⌬ Attributes</div><div class="tab">▤ Logs<span class="caret">⌄</span></div><div class="tab">◎ OTel</div><div class="tab">⌁ Datadog</div><div class="tab">{} Raw JSON</div></div>
+        <div class="detail">
+          <div class="detail-card">
+            <h3>Call Flow (Trace View) <span class="graph-btn">↔ View as Graph</span></h3>
+            <div class="flow-list">
+              <div class="flow-step"><div class="circle">1</div><div class="flow-box"><div class="flow-title">User Request <span class="flow-time">24s ago</span></div><div class="flow-meta"><span>research question about AgentVoir issues</span></div></div></div>
+              <div class="flow-step"><div class="circle purple">2</div><div class="flow-box active"><div class="flow-title">LLM Call <span class="badge toolcall">TOOL CALL</span></div><div class="flow-meta"><span>OpenAI / gpt-4.1-mini</span><span>1,420 tokens &nbsp; 1.12s</span></div></div></div>
+              <div class="flow-step"><div class="circle">3</div><div class="flow-box"><div class="flow-title">Tool Execution <span class="badge toolresult">TOOL RESULT</span></div><div class="flow-meta"><span>github.search_issues</span><span>430ms</span></div></div></div>
+              <div class="flow-step"><div class="circle purple">4</div><div class="flow-box active"><div class="flow-title">LLM Call <span class="badge final">FINAL ANSWER</span></div><div class="flow-meta"><span>OpenAI / gpt-4.1-mini</span><span>2,180 / 1,860 tokens &nbsp; 1.88s</span></div></div></div>
+              <div class="flow-step"><div class="circle green">5</div><div class="flow-box"><div class="flow-title">Response Returned <span class="flow-ok">◎</span></div><div class="flow-meta"><span>to client</span></div></div></div>
+            </div>
+          </div>
+
+          <div class="detail-card middle-detail">
+            <div class="step-header"><span class="step-chip">Step 2 of 5</span><span class="step-title">LLM Call → Tool Call Request</span><span class="mini-pill">Response Type: <b>TOOL CALL</b></span><span class="mini-pill">Terminal: <b style="color:#ff7c88">No</b></span><span class="mini-pill">Next Action: <b>Execute Tool</b></span></div>
+            <div class="detail-body">
+              <div class="tool-summary">
+                <div class="kv-card"><div class="kv-row"><span>Tool Call ID</span><b>call_7d9e1f</b></div><div class="kv-row"><span>Tool Name</span><b>github.search_issues</b></div></div>
+                <div class="args-box">Arguments<br>{<br>&nbsp;&nbsp;"repo": "agent-voir",<br>&nbsp;&nbsp;"query": "duplicate issues open in last 30 days",<br>&nbsp;&nbsp;"limit": 20<br>}</div>
+                <div class="kv-card"><div class="kv-row"><span>Tool Call Count</span><b>1</b></div><div class="kv-row"><span>Next Step</span><b>Execute Tool</b></div></div>
+              </div>
+              <div class="code-card"><div class="code-title">LLM Response (Tool Call Request)</div><div class="copy-btn">⧉</div><pre>{
+  <span class="key">"tool_calls"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="str">"call_7d9e1f"</span>,
+      <span class="key">"type"</span>: <span class="str">"function"</span>,
+      <span class="key">"function"</span>: {
+        <span class="key">"name"</span>: <span class="str">"github.search_issues"</span>,
+        <span class="key">"arguments"</span>: {
+          <span class="key">"repo"</span>: <span class="str">"agent-voir"</span>,
+          <span class="key">"query"</span>: <span class="str">"duplicate issues open in last 30 days"</span>,
+          <span class="key">"limit"</span>: <span class="num">20</span>
+        }
+      }
+    }
+  ],
+  <span class="key">"finish_reason"</span>: <span class="str">"tool_calls"</span>
+}</pre></div>
+            </div>
+          </div>
+
+          <div class="detail-card side-detail">
+            <div class="side-tabs"><div class="side-tab active">OTelemetry</div><div class="side-tab">Datadog</div></div>
+            <div class="side-content">
+              <div class="side-section"><div class="side-kv"><span>Trace ID</span><b>trace_9b8d7f3e2a4b9c8d</b></div><div class="side-kv"><span>Span ID</span><b>span_1a2b3c4d5e6f7g8h</b></div><div class="side-kv"><span>Parent Span</span><b>span_proxy_auth</b></div><div class="side-kv"><span>Span Kind</span><b>LLM_CALL</b></div><div class="side-kv"><span>Status</span><b class="ok-text">OK</b></div><div class="link-btn">↗ Open in Trace Viewer</div></div>
+              <div class="side-section"><h4>Export Status</h4><div class="side-kv"><span>OTel Export</span><b class="ok-text">◎ Exported</b></div><div class="side-kv"><span>Datadog Export</span><b class="ok-text">◎ Indexed</b></div><div class="side-kv"><span>Logs Export</span><b class="ok-text">◎ Indexed</b></div></div>
+            </div>
+          </div>
+
+          <div class="detail-card side-detail">
+            <div class="side-tabs"><div class="side-tab active">Tokens & Budget</div></div>
+            <div class="side-content">
+              <div class="side-section"><h4>This Call</h4><div class="side-kv"><span>Input Tokens</span><b>1,420</b></div><div class="side-kv"><span>Output Tokens</span><b>0</b></div><div class="side-kv"><span>Total Tokens</span><b>1,420</b></div><div class="side-kv"><span>Cost</span><b>$0.0032</b></div></div>
+              <div class="side-section"><h4>Today (User)</h4><div class="budget-ring-row"><div class="small-donut"><span>36%</span></div><div><div>Used <b>184,220</b></div><div>Limit <b>500,000</b></div><div class="delta">Left 315,780</div></div></div></div>
+              <div class="side-section"><h4>This Month</h4><div>Used 2.91M / 10M tokens</div><div class="bar" style="margin-top:8px"><i style="width:29.1%"></i></div><div class="small-label" style="text-align:right">29.1%</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer"><span>System Health <b class="health">● Healthy</b></span><span class="sep"></span><span>Events/sec <b>1,820</b></span><span class="sep"></span><span>WS Connections <b>8</b></span><span class="sep"></span><span>DB Lag <b>12ms</b></span><span class="sep"></span><span>Queue Lag <b>85ms</b></span><span class="sep"></span><span>Build <b>v1.0.0</b></span><span class="sep"></span><span>Uptime <b>2d 14h 32m</b></span><span class="footer-right">Time Zone&nbsp; <b>IST (UTC+05:30)</b>⌄</span></footer>
+    </main>
+  </div>
+</body>
+</html>
