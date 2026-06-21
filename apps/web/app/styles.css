@@ -331,7 +331,7 @@ code {
 .nav-count-badge {
   position: absolute;
   top: 4px;
-  right: 3px;
+  left: 3px;
   min-width: 13px;
   height: 13px;
   padding: 0 3px;
@@ -512,19 +512,75 @@ code {
   color: inherit;
 }
 
-.live-logo-mark {
+.live-logo-mark,
+.agentvoir-logo-mark {
+  position: relative;
   width: 28px;
   height: 28px;
   border-radius: 9px;
   background: linear-gradient(135deg, #1d7cff, #6633ff 60%, #0bd9ff);
   box-shadow: 0 0 26px rgba(46, 140, 255, 0.5);
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.live-logo-mark::before,
+.agentvoir-logo-mark::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 13px;
+  width: 18px;
+  height: 5px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-18deg);
+}
+
+.live-logo-mark::after,
+.agentvoir-logo-mark::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 16px;
+  width: 14px;
+  height: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-10deg);
+}
+
+.sidebar-brand .agentvoir-logo-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  box-shadow: 0 0 18px rgba(46, 140, 255, 0.42);
+}
+
+.sidebar-brand .agentvoir-logo-mark::before {
+  left: 4px;
+  top: 10px;
+  width: 14px;
+  height: 4px;
+  border-width: 1.5px;
+}
+
+.sidebar-brand .agentvoir-logo-mark::after {
+  left: 5px;
+  top: 12px;
+  width: 11px;
+  height: 3px;
+  border-width: 1px;
 }
 
 .live-topbar-brand-name {
   font-size: 21px;
   font-weight: 750;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.06em;
   color: #eaf3ff;
 }
 
@@ -538,7 +594,7 @@ code {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.05em;
   color: #eaf3ff;
 }
 

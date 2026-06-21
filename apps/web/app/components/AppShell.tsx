@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -12,7 +11,7 @@ function Sidebar({ live = false }: { live?: boolean }) {
     <aside className="sidebar">
       {!live ? (
         <Link href="/live" className="sidebar-brand" title="AgentVoir">
-          <Image src="/agentvoir-logo.svg" alt="AgentVoir" width={22} height={22} className="sidebar-logo" priority />
+          <span className="agentvoir-logo-mark" aria-hidden />
         </Link>
       ) : null}
       <SidebarNav />
