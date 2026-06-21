@@ -21,7 +21,7 @@ It helps enterprises **register agents**, **govern model/tool access**, **track 
 
 ![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
 
-## Dashboard Idea
+## Dashboard
 ![AgentVoir In-Plan Dashboard](docs/architecture/agent-voir-dashboard-01.png)
 
 
