@@ -41,6 +41,51 @@ These phase items now also include automatic discovery, provenance, sandboxing, 
 
 ---
 
+## Recent releases
+
+Track what shipped in each GitHub Release. See [docs/RELEASE.md](RELEASE.md) for the publish checklist.
+
+### v0.4.0 — Live Proxy Flow operations dashboard
+
+**Gateway**
+
+- In-memory `proxyevents` store with pub/sub
+- `GET /v1/proxy-events`, `GET /v1/proxy-events/metrics`, `GET /v1/traces/{traceId}`
+- `WS /ws/proxy-events` (snapshot, row_upsert, metrics_delta)
+- `POST /v1/proxy-events/seed` + `cmd/seed-proxy-events`
+- Gateway handler hooks record summary rows on proxy traffic
+- Ops auth middleware: unauthenticated read for browser console; seed requires API key
+- CORS allowlist for `http://localhost:3000` (web console)
+
+**Web console (`apps/web`)**
+
+- Mockup-aligned narrow sidebar (icon above label, ~68px)
+- Live Proxy Flow at `/live`: KPI row, expanded filter bar, quick-filter chips, dense event grid
+- Grid columns: next action, terminal, budget left, OTel, Datadog
+- Three-column trace drilldown: Call Flow / Step Details / Metadata & Links
+- Zustand live store + WebSocket client; mock fallback when gateway is down
+- Stub routes: Traces, Models, Tools, Alerts, Analytics, Audit, Policies, Settings
+
+**Demos and docs**
+
+- `make run-web`, `make seed-live-events`, `make demo-live-dashboard`
+- [docs/demo/live-dashboard.md](demo/live-dashboard.md), [docs/architecture/ui-dashboard.md](architecture/ui-dashboard.md)
+- Proxy-events paths in [docs/api/gateway-openapi.yaml](api/gateway-openapi.yaml)
+
+**Unchanged:** Docker one-liner still runs gateway + registry + token accounting only; web runs on the host via `make run-web`.
+
+### v0.3.0 — OIDC authentication foundation
+
+- `packages/auth-go`: JWT/OIDC verification, hybrid auth middleware
+- Registry + gateway wired for OIDC; Dex onebox config and `make demo-oidc`
+- [docs/guides/oidc-setup.md](guides/oidc-setup.md)
+
+### Earlier showcase releases (v0.2.x)
+
+Governance demos, Grafana dashboard, admin console MVP, onebox bundle, and GHCR images — see GitHub Releases.
+
+---
+
 ## Phase 0: Developer experience and project trust
 
 **Goal:** Make AgentVoir easy to understand, run, evaluate, and contribute to. This phase improves first impressions for open-source users, future contributors, and enterprise evaluators.
@@ -109,6 +154,7 @@ Run `./scripts/bootstrap-github-labels.sh` and `./scripts/bootstrap-github-issue
 - [x] Add API docs to GitHub Pages
 - [x] Add examples for authentication, agent registration, gateway calls, usage queries, and policy simulation
 - [x] Add SDK examples that map to each API section
+- [x] Document Live Proxy Flow proxy-events endpoints in gateway OpenAPI (v0.4.0) — *REST, trace drilldown, and seed paths for the operations console.*
 
 Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --profile docs up -d` → [http://localhost:8089](http://localhost:8089)
 
@@ -251,7 +297,7 @@ Local Swagger UI: `docker compose -f deployments/docker/docker-compose.yml --pro
 - [x] Switch onebox to pre-built GHCR images (no local build for end users)
 - [x] Add GitHub Actions workflow to build and push images on release (`.github/workflows/release-images.yml`)
 - [x] Docker-only start path (`./scripts/onebox.sh` — no Make required)
-- [ ] Publish first GitHub Release and make GHCR package public *(maintainer action — see [docs/RELEASE.md](RELEASE.md))*
+- [x] Publish GitHub Releases and make GHCR package public — *Shipped through **v0.4.0**; see [GitHub Releases](https://github.com/kaynor/agent-voir/releases) and [docs/RELEASE.md](RELEASE.md).*
 - [x] Add docker-compose health wait script for smoother first-run UX
 
 ---
@@ -352,12 +398,12 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 
 **Remaining showcase polish:**
 
-- [ ] README screenshots / GIF of admin console — *Visual proof on the project homepage so visitors see the UI without running Docker.*
-- [ ] Publish GitHub Release with showcase v2 features (GHCR tag + onebox bundle) — *Ship a versioned Docker image and one-command installer for the showcase features.*
+- [ ] README screenshots / GIF of admin console and Live Proxy Flow — *Visual proof on the project homepage so visitors see the UI without running Docker.*
+- [x] Publish GitHub Releases with showcase features (GHCR tags + onebox bundle) — *Shipped v0.2.x–v0.4.0; latest: **v0.4.0** (Live Proxy Flow).*
 
 ---
 
-### ⬜ OIDC authentication
+### 🟡 OIDC authentication
 
 **What it means:** Users log in with your company's existing identity system (Okta, Azure AD, Google Workspace, etc.) instead of shared static API keys. AgentVoir verifies "who is this person or service?" using industry-standard OpenID Connect (OIDC) tokens.
 
@@ -713,6 +759,8 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 **TODO items:**
 
 - [x] Agent list and detail pages — *Browse all registered agents and open a detail view.*
+- [x] App shell with narrow icon sidebar and cross-console navigation — *Shared layout for overview, agents, and Live Proxy Flow (v0.4.0).*
+- [x] Stub routes for Traces, Models, Tools, Alerts, Analytics, Audit, Policies, Settings — *Navigation works before each section ships.*
 - [ ] Agent registration form — *Create agents in the UI without calling the API manually.*
 - [ ] Manifest upload and validation UI — *Upload a YAML file and see validation errors inline.*
 - [ ] Dependency graph visualization — *Interactive map of what each agent depends on.*
@@ -728,6 +776,8 @@ High-impact items for visitors evaluating AgentVoir on GitHub. Run **`make showc
 ---
 
 ### 🟡 Operations dashboard (Live Proxy Flow UI)
+
+**Release:** **v0.4.0** (Milestones A–E largely complete; F–H and polish ongoing)
 
 **What it means:** A Chrome DevTools–style **live network console** for AI traffic — watch requests stream through the gateway, filter by agent or tag, click a row to inspect the full call flow (LLM calls, tool executions, cache hits, policy blocks), and jump out to Datadog or OpenTelemetry when you need enterprise observability. This is the primary operator experience shown in [ui-dashboard.md](architecture/ui-dashboard.md) and the mockup [agent-voir-dashboard-01.png](architecture/agent-voir-dashboard-01.png).
 
@@ -746,46 +796,60 @@ The UI is a **real-time subscriber**, not on the LLM proxy hot path. The grid re
 **Milestone A — App shell and navigation**
 
 - [x] Sidebar layout: Live Flow, Traces, Agents, Models, Tools, Alerts, Analytics, Audit Logs, Policies, Settings — *Match the mockup navigation; one place for all operator tasks.*
+- [x] Narrow sidebar (~68px) with icon above label — *Mockup-aligned vertical nav (v0.4.0).*
 - [x] Dark ops theme and responsive shell (sidebar + main + bottom drilldown) — *Visual design aligned with agent-voir-dashboard-01.png.*
+- [x] Dense typography for high information density — *Smaller crisp fonts, tabular nums, viewport-filling grid (v0.4.0).*
 - [x] Placeholder routes for each nav section — *Stub pages so navigation and routing work before features ship.*
-- [ ] User profile / OIDC session slot in sidebar footer — *Show who is logged in once SSO is wired (static placeholder today).*
+- [x] User profile / OIDC session slot in sidebar footer — *Static avatar + name placeholder until SSO is wired (v0.4.0).*
+- [x] Inter + JetBrains Mono via `next/font` — *Readable monospace for trace IDs and JSON (v0.4.0).*
 
 **Milestone B — Live Proxy Flow page (static / mock data)**
 
-- [x] KPI cards: requests, tokens, cost, budget, provider limits, latency percentiles, errors, cache hit rate — *Top-row health at a glance, like the mockup.*
-- [x] Control bar: time range, record limit, search box, response-type filter, follow-tail toggle, pause — *Operators control what the grid shows without reloading.*
-- [ ] Virtualized event grid (TanStack Table + TanStack Virtual, max ~500 rows) — *Smooth scrolling even under high traffic; only visible rows hit the DOM.*
-- [x] Grid columns: time, trace ID, agent/user, req→resp, status, provider/model, response type, tool, tags, tokens, cost, duration, OTel export — *Chrome Network–style columns for AI-specific semantics.*
-- [x] Bottom trace drilldown panel with tabs: Flow, Request, Response, Headers, Tool Calls, Tokens, OTel, Datadog — *Inspect one request without leaving the live view (Flow tab + mock JSON today).*
+- [x] KPI cards: requests, tokens, cost, latency, errors, cache hit rate — *Top-row health at a glance (six cards; mockup shows eight with sparklines — pending).*
+- [x] Control bar: time range, record limit, search box, response-type / provider / tag filters, More filters, follow-tail toggle, pause — *Expanded filter row matching mockup layout (dropdown wiring to API pending).*
+- [x] Quick-filter chips: errors, tool calls, final answers, blocked, cache hits — *Count badges below filter bar (v0.4.0).*
+- [ ] Virtualized event grid (TanStack Table + TanStack Virtual, max ~500 rows) — *TanStack deps added; Virtual not wired; DOM renders all rows today.*
+- [x] Grid columns: time, trace ID, agent/user, req→resp, status, provider/model, response type, next action, tool, terminal, tags, tokens, budget left, duration, cost, OTel, Datadog — *Chrome Network–style columns for AI-specific semantics (v0.4.0).*
+- [x] Bottom trace drilldown: tab bar (Flow, Request, Response, …) + three columns — *Call Flow / Step Details / Metadata & Links (v0.4.0).*
 - [x] Response-type badges: TOOL CALL, TOOL RESULT, FINAL ANSWER, STREAM FINAL, CACHE RESPONSE, GUARDRAIL BLOCK — *Color-coded call kinds at a glance.*
+- [x] WebSocket-connected live grid with mock fallback — *Zustand store connects to gateway or shows seed/mock data (v0.4.0).*
 
 **Milestone C — Backend live event query API**
 
-- [x] `GET /v1/proxy-events` with time window, filters, cursor pagination — *Historical and bounded query mode for investigations.*
+- [x] `GET /v1/proxy-events` with time window and filters — *Bounded query mode; cursor pagination pending.*
+- [x] `GET /v1/proxy-events/metrics` — *KPI snapshot for dashboard cards (v0.4.0).*
 - [x] Event summary schema (small rows; no full prompts in list) — *Keep list payloads lightweight for speed.*
+- [x] Gateway in-process event recorder on proxy traffic — *Summary rows emitted from handler; durable bus pending.*
 - [ ] Gateway emits summary events to Redis Streams or NATS — *Decouple proxy from UI; fan out to many viewers.*
-- [x] Recent-event store (ClickHouse or partitioned Postgres) — *In-memory store for dev/MVP; durable store pending.*
-- [x] Automatic tags (#error, #tool-call, #high-cost, #policy-blocked, …) and manual user tags — *Tag-driven investigation workflow (auto tags live; manual tags pending).*
+- [x] Recent-event store (in-memory for dev/MVP) — *Durable ClickHouse or partitioned Postgres pending.*
+- [x] Automatic tags (#error, #tool-call, #high-cost, #policy-blocked, …) on seed/demo rows — *Tag-driven investigation workflow (auto tags on seeded data; live tagging rules pending).*
 - [x] `POST /v1/proxy-events/seed` and `make seed-live-events` / `cmd/seed-proxy-events` — *Load dummy traces for dashboard verification.*
+- [x] Ops auth middleware: unauthenticated GET/WS for console reads — *Browser can connect without embedding gateway API key (v0.4.0).*
+- [x] CORS allowlist for web console origin — *`CORS_ALLOWED_ORIGINS=http://localhost:3000` in onebox example (v0.4.0).*
 
 **Milestone D — WebSocket live tail**
 
-- [x] `WS /ws/proxy-events` with typed packets: snapshot, row_upsert, row_patch, metrics_delta, heartbeat, backpressure — *Push updates to browsers without polling (backpressure pending).*
+- [x] `WS /ws/proxy-events` with typed packets: snapshot, row_upsert, metrics_delta — *Push updates to browsers without polling.*
+- [ ] Typed packets: row_patch, heartbeat, backpressure — *Partial protocol; backpressure handling pending.*
 - [x] Client ring buffer (default 500 rows; drop oldest in live mode) — *Bounded memory in the browser.*
-- [x] Follow tail ON/OFF, pause grid, resume from sequence number — *Operators freeze the grid while inspecting a row (seq resume pending).*
+- [x] Follow tail ON/OFF, pause grid — *Operators freeze the grid while inspecting a row.*
+- [ ] Resume from sequence number — *Reconnect cursor pending.*
 - [ ] Batched UI updates every 100–250 ms — *Avoid re-rendering thousands of times per second.*
 - [ ] Backpressure UI when event rate exceeds threshold (sampled live tail) — *Graceful degradation under extreme load.*
 
 **Milestone E — Trace drilldown and lazy payload fetch**
 
 - [x] `GET /v1/traces/{traceId}` with call-flow steps (user request → LLM → tool → LLM → response) — *Vertical timeline like the mockup Flow tab.*
+- [x] Three-column drilldown UI: Call Flow, Step Details, Metadata & Links — *Mockup layout with clickable flow steps (v0.4.0).*
+- [x] Tool call arguments JSON viewer in Step Details — *Debug tool executions without dumping everything into the grid (v0.4.0).*
+- [x] Metadata panel: tokens/budget, OTel/Datadog IDs, export checklist, disabled deep links — *Enterprise observability bridge placeholders (v0.4.0).*
 - [ ] Lazy fetch endpoints for request body, response body, headers, raw JSON — *Load heavy data only on tab click.*
-- [ ] Tool call arguments JSON viewer and linked span IDs — *Debug tool executions without dumping everything into the grid.*
 - [ ] Pin selected trace when it scrolls off the live window — *Keep inspecting an old row even as new rows arrive.*
 
 **Milestone F — Search, tags, and saved views**
 
-- [ ] Datadog-style search syntax (`agent:`, `status:`, `tag:`, `cost:>0.05`, …) — *Power users filter fast without clicking through menus.*
+- [x] Filter UI: time range, record limit, response types, providers, tags, search box — *Controls rendered; server-side query wiring pending (v0.4.0).*
+- [ ] Datadog-style search syntax (`agent:`, `status:`, `tag:`, `cost:>0.05`, …) — *Parse and apply search box to API query.*
 - [ ] Manual tag add/remove on rows (#review, #security-investigation, …) — *Mark traces for follow-up.*
 - [ ] Tag rules engine (auto-tag on high cost, errors, slow latency) — *Surface important rows automatically.*
 - [ ] Save View and Export CSV — *Reuse filter sets and share evidence with finance or security.*
@@ -794,12 +858,14 @@ The UI is a **real-time subscriber**, not on the LLM proxy hot path. The grid re
 
 - [ ] Gateway OTel spans: client.request, policy_check, cache_lookup, llm.call, tool.execution — *One trace per user turn; vendor-neutral telemetry.*
 - [ ] Stable `agentvoir.*` span attributes (agent_id, response_kind, tool.name, budget.remaining, …) — *LLM-specific facets in any OTel backend.*
-- [ ] Per-row export badges: OTel queued/exported, Datadog indexed/failed — *Audit reliability visible in the grid.*
-- [ ] Deep links: Open trace in Datadog, open logs, open cost dashboard — *Bridge from AgentVoir UI to enterprise observability tools.*
+- [x] Per-row export columns: OTel and Datadog status in grid — *Queued/exported/indexed indicators (v0.4.0).*
+- [x] Drilldown export checklist and disabled Datadog deep links — *UI placeholders for enterprise observability bridge (v0.4.0).*
+- [ ] Live deep links: Open trace in Datadog, open logs, open cost dashboard — *Requires OTel export configuration.*
 - [ ] OTel Collector → Datadog/Splunk/Elastic exporters — *Enterprise audit trail outside AgentVoir.*
 
 **Milestone H — Additional console pages (from sidebar)**
 
+- [x] Stub pages with “coming soon” for all sidebar routes — *Routing and shell complete (v0.4.0).*
 - [ ] Traces — query mode with custom time range and server-side pagination — *Deep search beyond live tail.*
 - [ ] Models — provider health, rate limits, pricing drift alerts — *Ops view of AI vendors.*
 - [ ] Tools — MCP and tool registry browser — *See what agents can invoke.*
@@ -810,13 +876,20 @@ The UI is a **real-time subscriber**, not on the LLM proxy hot path. The grid re
 
 **Frontend stack (`apps/web`):**
 
-| Layer | Choice |
-| ----- | ------ |
-| Framework | Next.js 14 App Router (existing) |
-| Grid | TanStack Table + TanStack Virtual |
-| Live state | Zustand |
-| Realtime | WebSocket client |
-| Styling | CSS modules / existing `styles.css` (dark ops theme) |
+| Layer | Choice | Status (v0.4.0) |
+| ----- | ------ | ----------------- |
+| Framework | Next.js 14 App Router (existing) | ✅ |
+| Grid | TanStack Table + TanStack Virtual | 🟡 deps installed; Virtual not wired |
+| Live state | Zustand | ✅ |
+| Realtime | WebSocket client | ✅ |
+| Styling | `styles.css` dark ops theme | ✅ |
+
+**Demo targets (v0.4.0):**
+
+- [x] `make run-web` — start Next.js console with gateway env vars
+- [x] `make seed-live-events` — load dummy proxy-event rows via gateway API
+- [x] `make demo-live-dashboard` — seed + REST smoke checks
+- [x] [docs/demo/live-dashboard.md](demo/live-dashboard.md) walkthrough
 
 ---
 

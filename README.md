@@ -17,7 +17,7 @@
 
 It helps enterprises **register agents**, **govern model/tool access**, **track token usage and cost**, **map dependencies**, **enforce policy-as-code**, and **cache repeated LLM requests** through an OpenAI-compatible proxy.
 
-> Status: Phase 1 complete; Phase 2 in progress — showcase v2 governance shipped, OIDC foundation live, full enterprise controls and governed metadata expansion ongoing.
+> Status: Phase 1 complete; Phase 2 in progress — **latest release [v0.4.0](https://github.com/kaynor/agent-voir/releases/tag/v0.4.0)** (Live Proxy Flow ops dashboard). Showcase governance + OIDC foundation (v0.3.0) shipped; full enterprise controls and governed metadata expansion ongoing.
 
 ![AgentVoir tech architecture](docs/architecture/tech-architecture.png)
 
@@ -115,11 +115,11 @@ Status: ✅ done · 🟡 partial · ⬜ not started · 🔒 blocked
 - ✅ Python and TypeScript SDK skeletons
 - ✅ Release security and software supply chain
 
-Phase 1 is complete except the **first GitHub Release** (maintainer publishes a tag and makes the GHCR package public — see [docs/RELEASE.md](docs/RELEASE.md)).
+Phase 1 is complete. GitHub Releases and GHCR images are published through **v0.4.0** — see [docs/RELEASE.md](docs/RELEASE.md) and [GitHub Releases](https://github.com/kaynor/agent-voir/releases).
 
 ### Phase 2: Enterprise controls
 
-**GitHub showcase track** (`make showcase`, [docs/demo/](docs/demo/)) — v2 ready for release:
+**GitHub showcase track** (`make showcase`, [docs/demo/](docs/demo/)) — shipped in v0.2.x–v0.4.0:
 
 - ✅ Gateway OPA policy check (403 on deny)
 - ✅ Gateway monthly budget enforcement (429 on exceed)
@@ -132,12 +132,18 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ✅ Admin web console MVP (dashboard, agent list, agent detail)
 - ✅ Grafana overview dashboard (cache, policy, budget metrics)
 - ✅ Cache-friendly quickstart path (`cache-demo-agent`, miss → hit)
-- ⬜ README screenshots / GIF of admin console
-- ⬜ Publish GitHub Release with showcase v2 features (GHCR tag + onebox bundle)
+- ✅ GitHub Releases + GHCR onebox bundle (through **v0.4.0**)
+- ⬜ README screenshots / GIF of admin console and Live Proxy Flow
+
+**v0.4.0 — Live Proxy Flow** ([release notes](https://github.com/kaynor/agent-voir/releases/tag/v0.4.0)):
+
+- ✅ Gateway proxy-events API (`GET /v1/proxy-events`, metrics, trace drilldown, WebSocket, seed)
+- ✅ Live operations console at `/live` — mockup-aligned sidebar, filters, dense grid, three-column trace drilldown
+- ✅ Demo: `make demo-live-dashboard`, `make run-web`, `make seed-live-events` — [docs/demo/live-dashboard.md](docs/demo/live-dashboard.md)
 
 **Full enterprise controls** (ongoing):
 
-- ⬜ OIDC authentication *(JWT on registry + gateway, Dex onebox; M2M flow and API-key gating pending)*
+- 🟡 OIDC authentication *(JWT on registry + gateway, Dex onebox, `make demo-oidc` — v0.3.0; M2M flow and API-key gating pending)*
 - ⬜ RBAC and service accounts
 - ⬜ Secret and credential governance
 - 🟡 Per-agent budgets *(monthly cap + utilization API; per-request token cap pending)*
@@ -155,8 +161,8 @@ Phase 1 is complete except the **first GitHub Release** (maintainer publishes a 
 - ⬜ Pre-flight token and cost estimation
 - ⬜ Human-in-the-loop approval gates
 - ⬜ Prompt injection and tool-call security
-- 🟡 Admin web console *(MVP done; registration UI, policy viewer, approval queue pending)*
-- 🟡 Operations dashboard — Live Proxy Flow UI *(Milestone A–B shipped: gateway proxy-events + WebSocket, `/live` console, seed/demo scripts — [ui-dashboard.md](docs/architecture/ui-dashboard.md))*
+- 🟡 Admin web console *(MVP + app shell/sidebar stubs — v0.4.0; registration UI, policy viewer, approval queue pending)*
+- 🟡 Operations dashboard — Live Proxy Flow UI *(v0.4.0: Milestones A–E — gateway proxy-events, WebSocket, `/live` console, seed/demo; filter query wiring, TanStack Virtual, Redis/NATS bus pending — [ui-dashboard.md](docs/architecture/ui-dashboard.md))*
 - ⬜ Enhanced agent metadata *(governed runtime asset model — see [meta-data.md](docs/meta-data.md))*
 
 ### Phase 3: Semantic cache and evals
@@ -312,13 +318,15 @@ See **[deployments/docker/INSTALL.md](deployments/docker/INSTALL.md)** for the f
 
 The **onebox** stack uses **pre-built Docker images** — no Make, no Go, and no local compile.
 
-**One command** (use the tag from the release you want — see [GitHub Releases](https://github.com/kaynor/agent-voir/releases)):
+**One command** (latest: **v0.4.0** — see [GitHub Releases](https://github.com/kaynor/agent-voir/releases)):
 
 ```bash
-curl -fsSL https://github.com/kaynor/agent-voir/releases/download/vX.Y.Z/run-agentvoir.sh | bash -s vX.Y.Z
+curl -fsSL https://github.com/kaynor/agent-voir/releases/download/v0.4.0/run-agentvoir.sh | bash -s v0.4.0
 ```
 
-Or download **`agentvoir-onebox-vX.Y.Z.zip`** from [GitHub Releases](https://github.com/kaynor/agent-voir/releases), unzip, and run `./onebox.sh`.
+Or download **`agentvoir-onebox-v0.4.0.zip`** from [GitHub Releases](https://github.com/kaynor/agent-voir/releases), unzip, and run `./onebox.sh`.
+
+For other versions, replace `v0.4.0` with the tag you want (e.g. `v0.3.0`).
 
 Contributors with a git clone can still use `./scripts/onebox.sh`.
 
@@ -370,32 +378,40 @@ Guide: [docs/guides/oidc-setup.md](docs/guides/oidc-setup.md)
 
 ### Admin web console & Live Proxy Flow UI
 
-The operations console lives in **`apps/web`** (Next.js — extend this project; no separate Vite app). Today it includes:
+The operations console lives in **`apps/web`** (Next.js — extend this project; no separate Vite app). **v0.4.0** adds the Live Proxy Flow operator experience.
+
+**Overview & agents**
 
 - **Overview** — agent registry summary, monthly spend, cache hit rate (`/`)
-- **Live Proxy Flow** — live grid, KPI cards, filters, three-column trace drilldown (`/live`) — see [docs/architecture/ui-dashboard.md](docs/architecture/ui-dashboard.md)
 - **Agents** — list and detail pages
+
+**Live Proxy Flow** (`/live`) — [ui-dashboard.md](docs/architecture/ui-dashboard.md) · mockup: [agent-voir-dashboard-01.png](docs/architecture/agent-voir-dashboard-01.png)
+
+- Narrow icon sidebar (Live Flow, Traces, Agents, Models, Tools, Alerts, …)
+- KPI row, expanded filters, quick-filter chips, dense live event grid
+- WebSocket tail from gateway proxy-events API (mock fallback offline)
+- Three-column trace drilldown: Call Flow / Step Details / Metadata & Links
 - Stub routes for Traces, Models, Tools, Alerts, Analytics, Audit, Policies, Settings
 
 ```bash
-make onebox-up-build              # or onebox-up with a release that includes these features
+make onebox-up-build              # gateway + registry + token accounting (Docker)
+make demo-live-dashboard          # seed dummy proxy events + API checks
 make run-web                      # http://localhost:3000/live
 ```
 
-Set `REGISTRY_API_URL` and `TOKEN_ACCOUNTING_URL` if your stack uses custom ports. Full UI roadmap: [docs/development-roadmap.md](docs/development-roadmap.md) → **Operations dashboard (Live Proxy Flow UI)**.
+Set `REGISTRY_API_URL` and `TOKEN_ACCOUNTING_URL` if your stack uses custom ports. Full milestone checklist: [docs/development-roadmap.md](docs/development-roadmap.md) → **Operations dashboard (Live Proxy Flow UI)**.
 
 **Live dashboard demo:** [docs/demo/live-dashboard.md](docs/demo/live-dashboard.md)
 
-```bash
-make demo-live-dashboard    # seed dummy proxy-event rows + API checks
-make run-web                # http://localhost:3000/live
-```
+**Note:** The Docker one-liner does not include the web console — run `make run-web` on the host after onebox is up.
 
 **Quick try troubleshooting**
 
 | Problem | Fix |
 | ------- | --- |
-| `docker pull` fails | Set `AGENTVOIR_VERSION` to a [Release](https://github.com/kaynor/agent-voir/releases) tag; make the GHCR package public |
+| `docker pull` fails | Set `AGENTVOIR_VERSION` to a [Release](https://github.com/kaynor/agent-voir/releases) tag (e.g. `v0.4.0`); make the GHCR package public |
+| Live grid empty | Run `make seed-live-events` or `make demo-live-dashboard` after onebox is up |
+| WebSocket disconnected | Ensure gateway is on `:8080`; set `CORS_ALLOWED_ORIGINS=http://localhost:3000` if needed |
 | Port already in use | Change `AGENTVOIR_*_PORT` in `deployments/docker/.env.onebox` |
 | Services not ready | Wait 60s, then `./scripts/onebox-smoke.sh` |
 | Cache stays `miss` | Use identical request body; see `examples/demo/sample-chat-request.json` |
